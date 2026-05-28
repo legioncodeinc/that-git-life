@@ -2,7 +2,7 @@
 
 > **Get the Git life.** A one-shot dev-environment installer + always-on local service that keeps your GitHub folder healthy, standardized, and ready to vibe.
 
-`@thenotoriousllama/that-git-life` is a globally-installed npm package by [The Notorious Llama](https://www.thenotoriousllama.com). It ships a single-command installer (Windows + macOS + Linux), a background service on `http://localhost:3050`, and a React web UI that runs your day-to-day: standardize new repos, scan existing ones for drift, manage your GitHub root, and sync skills/agents for Cursor or Claude Code.
+`@legioncodeinc/that-git-life` is a globally-installed npm package by [Legion Code Inc.](https://www.legioncodeinc.com). It ships a single-command installer (Windows + macOS + Linux), a background service on `http://localhost:3050`, and a React web UI that runs your day-to-day: standardize new repos, scan existing ones for drift, manage your GitHub root, and sync skills/agents for Cursor or Claude Code.
 
 ---
 
@@ -13,7 +13,6 @@ This repo is the **planning + source of truth** for the product. Cursor (or anot
 | Where | What's in it |
 |---|---|
 | [`library/`](library/) | Full documentation library — ADRs, PRDs, standards, domain references. Follows [Library Schema v2](library/knowledge/private/standardizer/schema-v2.md). |
-| [`brand/`](brand/) | Notorious Llama brand assets (tokens, logos, type) — copied so the web app can wire them in without leaving the repo. |
 | `README.md` | This file. |
 | `LICENSE.md` | License. |
 
@@ -73,16 +72,16 @@ Eventually:
 
 ```bash
 # macOS / Linux
-curl -fsSL https://thenotoriousllama.com/install.sh | bash
+curl -fsSL https://www.thatgitlife.com/install.sh | bash
 
 # Windows (PowerShell)
-iwr -useb https://thenotoriousllama.com/install.ps1 | iex
+iwr -useb https://www.thatgitlife.com/install.ps1 | iex
 ```
 
 Or:
 
 ```bash
-npm i -g @thenotoriousllama/that-git-life
+npm i -g @legioncodeinc/that-git-life
 tgl start
 ```
 
@@ -96,4 +95,4 @@ See [`LICENSE.md`](LICENSE.md).
 
 ---
 
-<sub>That git life. That llama life. That notorious life.</sub>
+<sub>We are Legion. Vibe with Legion.</sub>
