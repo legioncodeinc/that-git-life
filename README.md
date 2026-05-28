@@ -32,7 +32,8 @@ You handed me this brief on 2026-05-23. The conversation that produced these doc
 - Affiliate signups open as browser tabs during install **and** appear as a blocking checklist in the first-boot web UI.
 - SSH key generated in the chosen GitHub root, public key auto-uploaded to GitHub via the API.
 - Native OS hooks for auto-start (Task Scheduler / launchd / systemd).
-- Skills bundled in the package + periodic sync from `github.com/the-notorious-llama/global-skills`.
+- Skills bundled in the package + periodic sync from `github.com/legioncodeinc/global-skills` (public Legion Code Inc. skills repo - to be created).
+- **One brand, one identity: legioncodeinc.** The npm package, GitHub org, skills sync repo, and web UI aesthetic are all Legion Code Inc. Visual tokens are defined by the brand file in `/brand` at repo root (to be committed before PRD-010 begins).
 - Library Schema v2 is the canonical template for every repo TGL standardizes.
 
 ---
@@ -60,7 +61,7 @@ The 10 PRDs cover the entire build:
 | 007 | Auto-start hooks (Task Scheduler / launchd / systemd) |
 | 008 | Auto-update + remote skill sync |
 | 009 | Bundled skills + agents |
-| 010 | Brand application — full Notorious Llama dial |
+| 010 | Brand application — full Legion Code Inc. brand pass |
 
 When you finish a PRD, move its folder to `library/requirements/completed/` and write a QA artifact at `prd-<###>-<slug>/qa/prd-<###>-<slug>-qa.md`.
 
