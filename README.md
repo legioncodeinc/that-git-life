@@ -69,7 +69,13 @@ When you finish a PRD, move its folder to `library/requirements/completed/` and 
 
 ## Installation (when shipped)
 
-Eventually:
+Download the signed installer from [GitHub Releases](https://github.com/legioncodeinc/that-git-life/releases):
+
+- **macOS** — `.dmg`
+- **Windows** — `.exe`
+- **Linux** — `.AppImage`
+
+Or run the bootstrap script, which installs external dependencies (GitHub CLI, Node, Python, IDEs) then downloads and runs the native installer:
 
 ```bash
 # macOS / Linux
@@ -79,14 +85,7 @@ curl -fsSL https://www.thatgitlife.com/install.sh | bash
 iwr -useb https://www.thatgitlife.com/install.ps1 | iex
 ```
 
-Or:
-
-```bash
-npm i -g @legioncodeinc/that-git-life
-tgl start
-```
-
-Then open [http://localhost:3050](http://localhost:3050) and follow the onboarding flow.
+The app opens automatically. Follow the onboarding flow in the app window.
 
 ---
 
