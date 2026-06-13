@@ -90,4 +90,4 @@ typings/
 # Misc. Unimportant Files
 brand/
 session-export-*/
-library/
+_library-private/
