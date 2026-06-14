@@ -27,13 +27,15 @@
 
 # That Git Life
 
-**Get the Git life.** A one-shot dev-environment installer and always-on local service that keeps your GitHub folder healthy, standardized, and ready to vibe.
+**Get the Git life.** The planning blueprint and the cross-harness AI tooling for a dev-environment system that will keep your GitHub folder healthy, standardized, and ready to vibe.
 
 </div>
 
 ---
 
-`@legioncodeinc/that-git-life` is a globally-installed npm package by [Legion Code Inc.](https://www.legioncodeinc.com) It ships a single-command installer (Windows, macOS, and Linux), a background service on `http://localhost:3050`, and a React web UI that runs your day-to-day: standardize new repos, scan existing ones for drift, manage your GitHub root, and sync skills and agents for Cursor or Claude Code.
+That Git Life is a [Legion Code Inc.](https://www.legioncodeinc.com) project, and right now it is a blueprint, not a binary. There is no package to install yet. What lives in this repo today is two things: the plan for the product, and the AI tooling that will build it. The plan is a `library/` of PRDs and knowledge docs that spec exactly what gets built. The tooling is a cross-harness army of agents and skills (for Cursor, Claude Code, and Claude Cowork) that do the building.
+
+The product these plans describe will be a globally-installed npm package: a single-command installer for Windows, macOS, and Linux, an always-on local service on `http://localhost:3050`, and a React web UI that standardizes new repos, scans existing ones for drift, manages your GitHub root, and syncs skills and agents for Cursor or Claude Code. That is the destination. This repo is how we get there.
 
 ---
 
