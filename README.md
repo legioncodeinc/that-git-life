@@ -13,13 +13,6 @@
 
 **Get the Git life.** A one-shot dev-environment installer and always-on local service that keeps your GitHub folder healthy, standardized, and ready to vibe.
 
-<br>
-
-[![npm](https://img.shields.io/badge/npm-%40legioncodeinc%2Fthat--git--life-3DDC97?style=flat-square&labelColor=0A0B0D)](https://www.npmjs.com/package/@legioncodeinc/that-git-life)
-[![Platforms](https://img.shields.io/badge/platforms-Windows%20%C2%B7%20macOS%20%C2%B7%20Linux-3DDC97?style=flat-square&labelColor=0A0B0D)](#)
-[![Service](https://img.shields.io/badge/localhost-3050-3DDC97?style=flat-square&labelColor=0A0B0D)](#)
-[![Built by Legion](https://img.shields.io/badge/built%20by-Legion%20Code%20Inc.-3DDC97?style=flat-square&labelColor=0A0B0D)](https://www.legioncodeinc.com)
-
 </div>
 
 ---
