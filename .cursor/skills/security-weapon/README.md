@@ -1,0 +1,3 @@
+# security-weapon
+
+Cursor skill that equips the `security-guardian` Angel with pre-researched 2025–2026 vulnerability intelligence, scan procedures, and canonical remediation playbooks for React, Next.js, TypeScript, and Node.js codebases. The Weapon's three knowledge catalogs — vibe-coding AI-generated code patterns, OWASP Top 10 manifestations in this stack, and PII/financial data exposure patterns — are split across numbered guides for fast navigation during an in-session audit.
