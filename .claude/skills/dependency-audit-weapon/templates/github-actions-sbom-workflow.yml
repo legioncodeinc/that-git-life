@@ -1,0 +1,89 @@
+# SBOM Generation + Sigstore Attestation Workflow
+# Trigger: on tag push (release artifacts only, not every commit)
+# Source: guides/02-sbom-workflow.md, research/external/03-sbom-cyclonedx-spdx-2026.md
+
+name: SBOM
+
+on:
+  push:
+    tags:
+      - 'v*'
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write        # Required for Sigstore/OIDC attestation
+  attestations: write    # Required for actions/attest-sbom
+
+jobs:
+  sbom:
+    name: Generate and Attest SBOM
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Build the artifact (replace with your actual build step)
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build artifact
+        run: |
+          # Replace with your actual build command
+          # npm ci && npm run build
+          # docker build -t myapp:${{ github.ref_name }} .
+        shell: bash
+
+      # Step 2: Generate SBOM from the built artifact
+      # Option A: Syft (default, multi-language)
+      - name: Generate SBOM (Syft)
+        uses: anchore/sbom-action@v0.24.0
+        with:
+          # For a directory: path: ./dist
+          # For a Docker image: image: myapp:${{ github.ref_name }}
+          path: ./
+          format: cyclonedx-json          # CycloneDX 1.6 JSON (recommended)
+          output-file: sbom.cdx.json
+          artifact-name: sbom-${{ github.ref_name }}.cdx.json
+        id: sbom
+
+      # Option B: cyclonedx-py for Python projects (uncomment if needed)
+      # - name: Generate SBOM (Python)
+      #   run: |
+      #     pip install cyclonedx-bom
+      #     cyclonedx-py --format json --output sbom.cdx.json
+
+      # Step 3: Verify SBOM component count (basic sanity check)
+      - name: Verify SBOM
+        run: |
+          COMPONENT_COUNT=$(cat sbom.cdx.json | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('components', [])))")
+          echo "SBOM component count: $COMPONENT_COUNT"
+          if [ "$COMPONENT_COUNT" -lt 1 ]; then
+            echo "ERROR: SBOM has 0 components - generation likely failed"
+            exit 1
+          fi
+        shell: bash
+
+      # Step 4: Attest SBOM with Sigstore (GitHub OIDC-backed)
+      - name: Attest SBOM
+        uses: actions/attest-sbom@v2
+        with:
+          subject-name: ${{ github.repository }}
+          subject-digest: sha256:${{ hashFiles('sbom.cdx.json') }}
+          sbom-path: sbom.cdx.json
+
+      # Step 5: Store in cold storage (beyond GitHub's 90-day retention)
+      # Option: Upload to S3 (uncomment and configure)
+      # - name: Upload SBOM to S3
+      #   uses: aws-actions/amazon-s3-upload@v1
+      #   with:
+      #     bucket: ${{ secrets.SBOM_BUCKET }}
+      #     key: sboms/${{ github.repository }}/${{ github.ref_name }}/sbom.cdx.json
+      #     file: sbom.cdx.json
+
+      # Keep as GitHub artifact (90-day default; extend retention if policy allows)
+      - name: Upload SBOM as GitHub artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ github.ref_name }}
+          path: sbom.cdx.json
+          retention-days: 90    # Increase to max (400 days) for compliance

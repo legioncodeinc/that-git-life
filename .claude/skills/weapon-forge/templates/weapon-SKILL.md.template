@@ -1,0 +1,61 @@
+---
+name: {{weapon-name}}
+description: {{One-to-two-sentence description of what this skill does AND when to trigger it. Include at least three plausible user phrases. State what the skill does NOT cover if confusion with another skill is likely.}}
+---
+
+# {{Weapon Display Name}}
+
+{{A one-paragraph opening that describes the skill's purpose in human terms. Reference the paired Angel by name and state the scope clearly.}}
+
+---
+
+## When to use
+
+Invoke when {{trigger condition 1}}. Also triggers on {{trigger condition 2}} and {{trigger condition 3}}. Do not invoke when {{explicit non-trigger}} — that belongs to {{other agent or skill}}.
+
+---
+
+## Procedure
+
+1. {{First step. Imperative voice. Cite the guide that covers details if the step is non-trivial.}}
+2. {{Second step.}}
+3. {{Third step.}}
+
+See `guides/` for the detailed instruction set, `examples/` for worked cases, and `templates/` for output stubs.
+
+---
+
+## Critical directives
+
+- {{Directive 1. Always reference the why if non-obvious.}}
+- {{Directive 2.}}
+- {{Directive 3.}}
+
+Full rationale and edge cases live in `guides/00-principles.md`.
+
+---
+
+## Guides
+
+- `guides/00-principles.md` — scope, boundaries, critical directives in depth
+- `guides/01-{{verb1}}.md` — how to {{verb1}}
+- `guides/02-{{verb2}}.md` — how to {{verb2}}
+- {{add more as needed}}
+
+## Examples
+
+- `examples/{{example-1}}.md` — happy-path walk-through
+- `examples/{{example-2}}.md` — {{edge case or failure mode}}
+
+## Templates
+
+- `templates/{{output-format}}.md` — the report shape this skill produces
+
+## Research
+
+See `research/research-plan.md` for the sources behind the rules in this skill.
+
+---
+
+*Paired Angel: `ai-tools/agents/{{angel-name}}.md`*
+*Command Brief: `ai-tools/command-briefs/{{angel-name}}-command-brief.md`*

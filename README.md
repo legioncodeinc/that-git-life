@@ -1,5 +1,21 @@
 <div align="center">
 
+<a href="https://www.ospry.ai">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/legioncodeinc/brands/main/ospry/logos/png/core-assets/transparent/horizontal-white-1024.png">
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/legioncodeinc/brands/main/ospry/logos/png/core-assets/transparent/horizontal-ink-1024.png">
+    <img alt="OSPRY" src="https://raw.githubusercontent.com/legioncodeinc/brands/main/ospry/logos/png/core-assets/transparent/horizontal-ink-1024.png" width="300">
+  </picture>
+</a>
+
+<sub>Want to know what will actually drive more revenue? **[OSPRY](https://www.ospry.ai)** is the insight engine built for exactly that. Check it out at [ospry.ai](https://www.ospry.ai).</sub>
+
+</div>
+
+---
+
+<div align="center">
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/legioncodeinc/brands/main/legion-code-inc/logos/legion-logo-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/legioncodeinc/brands/main/legion-code-inc/logos/legion-logo-light.svg">
@@ -28,7 +44,10 @@ This repo is the **planning and source of truth** for the product. Cursor (or an
 | Where | What's in it |
 |---|---|
 | [`library/`](library/) | Library Schema v2 scaffold. Lifecycle folder structure (knowledge, requirements, issues, notes) with seeded READMEs. |
-| [`.cursor/`](.cursor/) | Cursor agent definitions, skills, and project rules. |
+| [`.cursor/`](.cursor/) | Cursor agents, skills, and rules. The source of truth for the asset system. |
+| [`.claude/`](.claude/) | The same agents and skills, in the structure Claude Code consumes. |
+| [`.cowork/`](.cowork/) | Every skill packaged as an installable `.skill` for Claude Cowork. |
+| `AGENTS.md` · `SKILLS.md` · `HOOKS.md` · `RULES.md` | Deep explainers for each asset type and how they work across harnesses. |
 | `README.md` | This file. |
 | `LICENSE.md` | License. |
 
@@ -36,19 +55,145 @@ The work lives in `library/`. The agents read the PRDs there and build the produ
 
 ---
 
-## Cursor agent and skill infrastructure
+## The asset system
 
-The `.cursor/` directory wires up the agents, skills, and project rules active in this repo:
+This repo ships a full army of AI assets that work across Cursor, Claude Code, and Claude Cowork. There are four kinds. Each has a deep-dive doc.
 
-| Path | What it does |
-|---|---|
-| `.cursor/agents/library-guardian.md` | Owns the full documentation lifecycle: scaffolding, PRD/IRD authoring, knowledge-base docs, sync audits, lifecycle moves. |
-| `.cursor/agents/knowledge-guardian.md` | Authors narrative knowledge docs (system overviews, auth architecture, Mermaid diagrams, SQL schemas) under `library/knowledge/`. |
-| `.cursor/skills/library-weapon/` | Skill package for the library-guardian agent. Guides, templates, and examples for every documentation workflow. |
-| `.cursor/skills/knowledge-weapon/` | Skill package for the knowledge-guardian agent. Domain taxonomy, document format guide, analysis workflow, and templates. |
-| `.cursor/skills/thanos-gauntlet-glove/` | End-to-end PRD execution orchestrator. Takes a set of PRDs from spec to merged, CI-green PR with no partial completion allowed. |
-| `.cursor/rules/no-em-dashes.mdc` | Project rule: no em dashes or en dashes in any authored prose. |
-| `.cursor/rules/respect-agent-work-boundaries.mdc` | Project rule: agents never modify files owned by another active agent or parallel session. |
+### Agents
+
+Focused AI personas, one per domain, with their own instructions and guardrails. A primary orchestrator routes each request to the specialist that owns it. In this repo they are called **Angels**, and each one is paired with a skill it reads from. They live in [`.cursor/agents/`](./.cursor/agents/) and [`.claude/agents/`](./.claude/agents/).
+
+**[Read more in AGENTS.md](./AGENTS.md)**
+
+### Skills
+
+Packaged, reusable expertise an agent loads on demand: instructions, guides, templates, and examples behind a `SKILL.md`. In this repo they are called **Weapons**. They are the most portable asset, working in all three harnesses, and ship for Cowork as one-click `.skill` packages.
+
+**[Read more in SKILLS.md](./SKILLS.md)**
+
+### Hooks
+
+Scripts that fire automatically on session events (before or after a tool runs, on prompt submit, on session start). They make "always do X" a guarantee instead of a hope. This repo currently ships none; the doc explains the model and how to add them per harness.
+
+**[Read more in HOOKS.md](./HOOKS.md)**
+
+### Rules
+
+Always-on guidance that constrains every agent at all times: house style, safety constraints, and workflow gates. This repo carries four, including a strict no-em-dashes rule and a plan-construction protocol.
+
+**[Read more in RULES.md](./RULES.md)**
+
+---
+
+## Cross-harness compatibility
+
+| Asset | Cursor | Claude Code | Claude Cowork |
+|---|---|---|---|
+| **Agents** | `.cursor/agents/*.md` | `.claude/agents/*.md` | runs on the Agent SDK; skills are the portable unit |
+| **Skills** | `.cursor/skills/<name>/` | `.claude/skills/<name>/` | `.cowork/skills/<name>.skill` (one-click install) |
+| **Hooks** | `.cursor/hooks.json` | `.claude/settings.json` | not user-configurable |
+| **Rules** | `.cursor/rules/*.mdc` | `CLAUDE.md` | `CLAUDE.md` + project instructions |
+
+Skills port one-to-one across all three. Agents share a format across Cursor and Claude Code. Hooks and rules use different formats per harness, so they are translated rather than copied. The Cowork skill copies have their angle brackets swapped for curly braces so they survive import (see [SKILLS.md](./SKILLS.md)).
+
+---
+
+## Agent and skill catalog
+
+Every capability in the army, with its description and a direct link for each harness. Where a row shows an **Agent** and a **Skill**, the Angel is the persona and the Weapon is the arsenal it wields. Standalone skills (the factory line and orchestrators) have no paired Angel.
+
+<details>
+<summary><b>Browse all 85 capabilities</b></summary>
+
+| Capability | What it does | Cursor | Claude Code | Cowork |
+|---|---|---|---|---|
+| **Adr Writing** | Architecture Decision Records specialist , authors, reviews, and governs ADRs in Nygard format (Context / Decision / Consequences / Alternatives Considered), MADR... | [Agent](./.cursor/agents/adr-writing-guardian.md) · [Skill](./.cursor/skills/adr-writing-weapon/) | [Agent](./.claude/agents/adr-writing-guardian.md) · [Skill](./.claude/skills/adr-writing-weapon/) | [Skill](./.cowork/skills/adr-writing-weapon.skill) |
+| **Affiliate Referral Program** | Affiliate and referral program specialist for SaaS products -- platform selection (Rewardful, FirstPromoter, Tolt, PartnerStack, Impact, Refersion), the affiliate... | [Agent](./.cursor/agents/affiliate-referral-program-guardian.md) · [Skill](./.cursor/skills/affiliate-referral-program-weapon/) | [Agent](./.claude/agents/affiliate-referral-program-guardian.md) · [Skill](./.claude/skills/affiliate-referral-program-weapon/) | [Skill](./.cowork/skills/affiliate-referral-program-weapon.skill) |
+| **Agile Scrum** | Scrum methodology specialist , audits whether teams are actually practising Scrum, coaches Sprint Planning / Daily Scrum / Sprint Review / Retrospective / Backlog... | [Agent](./.cursor/agents/agile-scrum-guardian.md) · [Skill](./.cursor/skills/agile-scrum-weapon/) | [Agent](./.claude/agents/agile-scrum-guardian.md) · [Skill](./.claude/skills/agile-scrum-weapon/) | [Skill](./.cowork/skills/agile-scrum-weapon.skill) |
+| **Ai Coding Tools** | The vibe-coder's AI coding tool advisor , recommends, compares, and configures Cursor, Claude Code, Aider, Cline, Windsurf (Cascade), Continue.dev, Replit Agent,... | [Agent](./.cursor/agents/ai-coding-tools-guardian.md) · [Skill](./.cursor/skills/ai-coding-tools-weapon/) | [Agent](./.claude/agents/ai-coding-tools-guardian.md) · [Skill](./.claude/skills/ai-coding-tools-weapon/) | [Skill](./.cowork/skills/ai-coding-tools-weapon.skill) |
+| **Ai Docs** | API documentation research notes. Stub skill, no SKILL.md yet. | [Skill](./.cursor/skills/ai-docs-weapon/) | [Skill](./.claude/skills/ai-docs-weapon/) | [Skill](./.cowork/skills/ai-docs-weapon.skill) |
+| **Ai Tools Platform** | The vibe coder's AI toolbox specialist , AI gateways (Portkey, OpenRouter), cloud providers (AWS Bedrock, Vertex AI, Azure OpenAI), frontier model selection (Clau... | [Agent](./.cursor/agents/ai-tools-platform-guardian.md) · [Skill](./.cursor/skills/ai-tools-platform-weapon/) | [Agent](./.claude/agents/ai-tools-platform-guardian.md) · [Skill](./.claude/skills/ai-tools-platform-weapon/) | [Skill](./.cowork/skills/ai-tools-platform-weapon.skill) |
+| **Alt Ads Platforms** | Paid acquisition specialist for alternative ad platforms beyond Meta and Google Search , LinkedIn Ads (B2B Lead Gen Forms, Thought Leader Ads, ABM), TikTok Ads (S... | [Agent](./.cursor/agents/alt-ads-platforms-guardian.md) · [Skill](./.cursor/skills/alt-ads-platforms-weapon/) | [Agent](./.claude/agents/alt-ads-platforms-guardian.md) · [Skill](./.claude/skills/alt-ads-platforms-weapon/) | [Skill](./.cowork/skills/alt-ads-platforms-weapon.skill) |
+| **Angel Creator** | Phase 3 of the Legion AI Tools Factory pipeline. | [Skill](./.cursor/skills/angel-creator/) | [Skill](./.claude/skills/angel-creator/) | [Skill](./.cowork/skills/angel-creator.skill) |
+| **Api Docs** | API documentation authority , Swagger UI / Redoc / Scalar / Mintlify / Stoplight / Bump.sh tool selection, OpenAPI spec enrichment with JSON request + response ex... | [Agent](./.cursor/agents/api-docs-guardian.md) · [Skill](./.cursor/skills/api-docs-weapon/) | [Agent](./.claude/agents/api-docs-guardian.md) · [Skill](./.claude/skills/api-docs-weapon/) | [Skill](./.cowork/skills/api-docs-weapon.skill) |
+| **App Store Submission** | App store publication specialist for iOS (App Store Connect + TestFlight) and Android (Google Play Console). | [Agent](./.cursor/agents/app-store-submission-guardian.md) · [Skill](./.cursor/skills/app-store-submission-weapon/) | [Agent](./.claude/agents/app-store-submission-guardian.md) · [Skill](./.claude/skills/app-store-submission-weapon/) | [Skill](./.cowork/skills/app-store-submission-weapon.skill) |
+| **Asset** | Single owner of the Universal Asset Registry , the platform-owned catalog of every Feature, Page, Route, Surface, Control, Display, Layout, NavEntry, DesignToken,... | [Agent](./.cursor/agents/asset-guardian.md) · [Skill](./.cursor/skills/asset-weapon/) | [Agent](./.claude/agents/asset-guardian.md) · [Skill](./.claude/skills/asset-weapon/) | [Skill](./.cowork/skills/asset-weapon.skill) |
+| **Auth** | End-to-end authentication implementation specialist , provider selection (Clerk / Better Auth / Auth.js / Supabase Auth / WorkOS / Stack Auth / Kinde / Stytch), G... | [Agent](./.cursor/agents/auth-guardian.md) · [Skill](./.cursor/skills/auth-weapon/) | [Agent](./.claude/agents/auth-guardian.md) · [Skill](./.claude/skills/auth-weapon/) | [Skill](./.cowork/skills/auth-weapon.skill) |
+| **Big Bang Space** | Front-of-the-pipeline Angel for the Legion AI Tools Factory. | [Agent](./.cursor/agents/big-bang-space.md) · [Skill](./.cursor/skills/big-bang-earth/) | [Agent](./.claude/agents/big-bang-space.md) · [Skill](./.claude/skills/big-bang-earth/) | [Skill](./.cowork/skills/big-bang-earth.skill) |
+| **Blogging Content Strategy** | Editorial blogging strategy specialist , cluster + pillar topical authority architecture, post-length decisions by search intent, title + H1 + meta description cr... | [Agent](./.cursor/agents/blogging-content-strategy-guardian.md) · [Skill](./.cursor/skills/blogging-content-strategy-weapon/) | [Agent](./.claude/agents/blogging-content-strategy-guardian.md) · [Skill](./.claude/skills/blogging-content-strategy-weapon/) | [Skill](./.cowork/skills/blogging-content-strategy-weapon.skill) |
+| **Branching Strategy** | Branching strategy advisor for Git-based teams. | [Agent](./.cursor/agents/branching-strategy-guardian.md) · [Skill](./.cursor/skills/branching-strategy-weapon/) | [Agent](./.claude/agents/branching-strategy-guardian.md) · [Skill](./.claude/skills/branching-strategy-weapon/) | [Skill](./.cowork/skills/branching-strategy-weapon.skill) |
+| **Changelog Release Notes** | Publishes engaging public changelogs and release notes that drive user engagement. | [Agent](./.cursor/agents/changelog-release-notes-guardian.md) · [Skill](./.cursor/skills/changelog-release-notes-weapon/) | [Agent](./.claude/agents/changelog-release-notes-guardian.md) · [Skill](./.claude/skills/changelog-release-notes-weapon/) | [Skill](./.cowork/skills/changelog-release-notes-weapon.skill) |
+| **Code Forensics** | Conducts forensic investigations of software-development and agency-services engagements to support fee-clawback, breach-of-contract, fraud, and gross-negligence... | [Agent](./.cursor/agents/code-forensics-guardian.md) · [Skill](./.cursor/skills/code-forensics-weapon/) | [Agent](./.claude/agents/code-forensics-guardian.md) · [Skill](./.claude/skills/code-forensics-weapon/) | [Skill](./.cowork/skills/code-forensics-weapon.skill) |
+| **Code Review Pr** | Code review culture and PR lifecycle specialist. | [Agent](./.cursor/agents/code-review-pr-guardian.md) · [Skill](./.cursor/skills/code-review-pr-weapon/) | [Agent](./.claude/agents/code-review-pr-guardian.md) · [Skill](./.claude/skills/code-review-pr-weapon/) | [Skill](./.cowork/skills/code-review-pr-weapon.skill) |
+| **Cold Outreach** | Outbound sales specialist for founders running cold email. | [Agent](./.cursor/agents/cold-outreach-guardian.md) · [Skill](./.cursor/skills/cold-outreach-weapon/) | [Agent](./.claude/agents/cold-outreach-guardian.md) · [Skill](./.claude/skills/cold-outreach-weapon/) | [Skill](./.cowork/skills/cold-outreach-weapon.skill) |
+| **Command Center** | Phase 1 of the Legion AI Tools Factory pipeline. | [Skill](./.cursor/skills/command-center/) | [Skill](./.claude/skills/command-center/) | [Skill](./.cowork/skills/command-center.skill) |
+| **Crm Integration** | CRM connectivity specialist for HubSpot, Salesforce, Pipedrive, Attio, Folk, Close, and Copper. | [Agent](./.cursor/agents/crm-integration-guardian.md) · [Skill](./.cursor/skills/crm-integration-weapon/) | [Agent](./.claude/agents/crm-integration-guardian.md) · [Skill](./.claude/skills/crm-integration-weapon/) | [Skill](./.cowork/skills/crm-integration-weapon.skill) |
+| **Cron Scheduling** | Scheduled-job specialist for cron expression authoring and auditing, platform-specific limits (Vercel Cron, Cloudflare Cron Triggers, GitHub Actions schedule), di... | [Agent](./.cursor/agents/cron-scheduling-guardian.md) · [Skill](./.cursor/skills/cron-scheduling-weapon/) | [Agent](./.claude/agents/cron-scheduling-guardian.md) · [Skill](./.claude/skills/cron-scheduling-weapon/) | [Skill](./.cowork/skills/cron-scheduling-weapon.skill) |
+| **Csv Xlsx Import Export** | Implements and audits the "upload your spreadsheet" feature surface for React/Next.js products. | [Agent](./.cursor/agents/csv-xlsx-import-export-guardian.md) · [Skill](./.cursor/skills/csv-xlsx-import-export-weapon/) | [Agent](./.claude/agents/csv-xlsx-import-export-guardian.md) · [Skill](./.claude/skills/csv-xlsx-import-export-weapon/) | [Skill](./.cowork/skills/csv-xlsx-import-export-weapon.skill) |
+| **Cursor Ide** | Cursor IDE platform specialist , project rules (.cursorrules migration, .cursor/rules/*.mdc authoring), MCP server registration and tool authoring, @cursor/sdk AP... | [Agent](./.cursor/agents/cursor-ide-guardian.md) · [Skill](./.cursor/skills/cursor-ide-weapon/) | [Agent](./.claude/agents/cursor-ide-guardian.md) · [Skill](./.claude/skills/cursor-ide-weapon/) | [Skill](./.cowork/skills/cursor-ide-weapon.skill) |
+| **Customer Support Tooling** | Support stack specialist for SaaS products. | [Agent](./.cursor/agents/customer-support-tooling-guardian.md) · [Skill](./.cursor/skills/customer-support-tooling-weapon/) | [Agent](./.claude/agents/customer-support-tooling-guardian.md) · [Skill](./.claude/skills/customer-support-tooling-weapon/) | [Skill](./.cowork/skills/customer-support-tooling-weapon.skill) |
+| **Dark Mode Theming** | Audits and implements the full dark-mode theming surface for React/Next.js applications. | [Agent](./.cursor/agents/dark-mode-theming-guardian.md) · [Skill](./.cursor/skills/dark-mode-theming-weapon/) | [Agent](./.claude/agents/dark-mode-theming-guardian.md) · [Skill](./.claude/skills/dark-mode-theming-weapon/) | [Skill](./.cowork/skills/dark-mode-theming-weapon.skill) |
+| **Db** | PostgreSQL data architecture specialist , schema design, indexing strategy, zero-downtime migrations, ORM choice (Drizzle / Prisma / raw SQL), and serverless DB p... | [Agent](./.cursor/agents/db-guardian.md) · [Skill](./.cursor/skills/db-weapon/) | [Agent](./.claude/agents/db-guardian.md) · [Skill](./.claude/skills/db-weapon/) | [Skill](./.cowork/skills/db-weapon.skill) |
+| **Dependency Audit** | Supply-chain security specialist for open-source dependency hygiene. | [Agent](./.cursor/agents/dependency-audit-guardian.md) · [Skill](./.cursor/skills/dependency-audit-weapon/) | [Agent](./.claude/agents/dependency-audit-guardian.md) · [Skill](./.claude/skills/dependency-audit-weapon/) | [Skill](./.cowork/skills/dependency-audit-weapon.skill) |
+| **Design System** | Bootstraps complete design systems from scratch for any product , master design brief, tokens CSS, utility layer CSS, per-component specs, per-screen specs, stati... | [Agent](./.cursor/agents/design-system-guardian.md) · [Skill](./.cursor/skills/design-system-weapon/) | [Agent](./.claude/agents/design-system-guardian.md) · [Skill](./.claude/skills/design-system-weapon/) | [Skill](./.cowork/skills/design-system-weapon.skill) |
+| **Devops** | Container build + CI/CD pipeline specialist for Node / Next.js / TypeScript stacks , Dockerfile hygiene (multi-stage, BuildKit secrets + cache mounts, non-root, H... | [Agent](./.cursor/agents/devops-guardian.md) · [Skill](./.cursor/skills/devops-weapon/) | [Agent](./.claude/agents/devops-guardian.md) · [Skill](./.claude/skills/devops-weapon/) | [Skill](./.cowork/skills/devops-weapon.skill) |
+| **Discord Bot** | Discord bot and application specialist. | [Agent](./.cursor/agents/discord-bot-guardian.md) · [Skill](./.cursor/skills/discord-bot-weapon/) | [Agent](./.claude/agents/discord-bot-guardian.md) · [Skill](./.claude/skills/discord-bot-weapon/) | [Skill](./.cowork/skills/discord-bot-weapon.skill) |
+| **Discovery Research** | Continuous product discovery coach , Teresa Torres interview cadence, Opportunity Solution Trees (OST), Jobs-to-be-Done (JTBD) interviews, assumption mapping, and... | [Agent](./.cursor/agents/discovery-research-guardian.md) · [Skill](./.cursor/skills/discovery-research-weapon/) | [Agent](./.claude/agents/discovery-research-guardian.md) · [Skill](./.claude/skills/discovery-research-weapon/) | [Skill](./.cowork/skills/discovery-research-weapon.skill) |
+| **Docs Site** | Documentation-site infrastructure specialist. | [Agent](./.cursor/agents/docs-site-guardian.md) · [Skill](./.cursor/skills/docs-site-weapon/) | [Agent](./.claude/agents/docs-site-guardian.md) · [Skill](./.claude/skills/docs-site-weapon/) | [Skill](./.cowork/skills/docs-site-weapon.skill) |
+| **Estimation** | Software estimation and forecasting specialist , relative-sizing frameworks (Fibonacci story points, T-shirt sizing, Planning Poker), the NoEstimates movement and... | [Agent](./.cursor/agents/estimation-guardian.md) · [Skill](./.cursor/skills/estimation-weapon/) | [Agent](./.claude/agents/estimation-guardian.md) · [Skill](./.claude/skills/estimation-weapon/) | [Skill](./.cowork/skills/estimation-weapon.skill) |
+| **Font Loading** | Production-focused web font loading specialist. | [Agent](./.cursor/agents/font-loading-guardian.md) · [Skill](./.cursor/skills/font-loading-weapon/) | [Agent](./.claude/agents/font-loading-guardian.md) · [Skill](./.claude/skills/font-loading-weapon/) | [Skill](./.cowork/skills/font-loading-weapon.skill) |
+| **Git** | Git mastery specialist , interactive rebase (squash, fixup, reword, autosquash), conflict resolution (rerere, mergetool, diff3), history rewriting (git filter-rep... | [Agent](./.cursor/agents/git-guardian.md) · [Skill](./.cursor/skills/git-weapon/) | [Agent](./.claude/agents/git-guardian.md) · [Skill](./.claude/skills/git-weapon/) | [Skill](./.cowork/skills/git-weapon.skill) |
+| **Github Repo Health** | Repository hygiene auditor for GitHub repositories. | [Agent](./.cursor/agents/github-repo-health-guardian.md) · [Skill](./.cursor/skills/github-repo-health-weapon/) | [Agent](./.claude/agents/github-repo-health-guardian.md) · [Skill](./.claude/skills/github-repo-health-weapon/) | [Skill](./.cowork/skills/github-repo-health-weapon.skill) |
+| **God** | Routing skill for the Cursor IDE Army. | [Skill](./.cursor/skills/god/) | [Skill](./.claude/skills/god/) | [Skill](./.cowork/skills/god.skill) |
+| **God Registrar** | Phase 4 of the Legion AI Tools Factory pipeline. | [Skill](./.cursor/skills/god-registrar/) | [Skill](./.claude/skills/god-registrar/) | [Skill](./.cowork/skills/god-registrar.skill) |
+| **Gods Hand** | Pipeline controller and orchestration Angel for the Legion AI Tools Factory. | [Agent](./.cursor/agents/gods-hand.md) · [Skill](./.cursor/skills/gods-hand-weapon/) | [Agent](./.claude/agents/gods-hand.md) · [Skill](./.claude/skills/gods-hand-weapon/) | [Skill](./.cowork/skills/gods-hand-weapon.skill) |
+| **Hiring Ats** | Applicant Tracking Systems authority for recruiting-tech stacks. | [Agent](./.cursor/agents/hiring-ats-guardian.md) · [Skill](./.cursor/skills/hiring-ats-weapon/) | [Agent](./.claude/agents/hiring-ats-guardian.md) · [Skill](./.claude/skills/hiring-ats-weapon/) | [Skill](./.cowork/skills/hiring-ats-weapon.skill) |
+| **Hr Payroll** | HR infrastructure and payroll decision specialist for software startups , domestic payroll platform selection (Gusto, Rippling, Justworks), international contract... | [Agent](./.cursor/agents/hr-payroll-guardian.md) · [Skill](./.cursor/skills/hr-payroll-weapon/) | [Agent](./.claude/agents/hr-payroll-guardian.md) · [Skill](./.claude/skills/hr-payroll-weapon/) | [Skill](./.cowork/skills/hr-payroll-weapon.skill) |
+| **Http Rest Fundamentals** | HTTP and REST protocol authority. | [Agent](./.cursor/agents/http-rest-fundamentals-guardian.md) · [Skill](./.cursor/skills/http-rest-fundamentals-weapon/) | [Agent](./.claude/agents/http-rest-fundamentals-guardian.md) · [Skill](./.claude/skills/http-rest-fundamentals-weapon/) | [Skill](./.cowork/skills/http-rest-fundamentals-weapon.skill) |
+| **Icon System** | Icon-system specialist for React/Next.js applications. | [Agent](./.cursor/agents/icon-system-guardian.md) · [Skill](./.cursor/skills/icon-system-weapon/) | [Agent](./.claude/agents/icon-system-guardian.md) · [Skill](./.claude/skills/icon-system-weapon/) | [Skill](./.cowork/skills/icon-system-weapon.skill) |
+| **Image Optimization** | Image optimization specialist for React/Next.js and HTML contexts. | [Agent](./.cursor/agents/image-optimization-guardian.md) · [Skill](./.cursor/skills/image-optimization-weapon/) | [Agent](./.claude/agents/image-optimization-guardian.md) · [Skill](./.claude/skills/image-optimization-weapon/) | [Skill](./.cowork/skills/image-optimization-weapon.skill) |
+| **Incorporation Startup Stack** | Company formation advisor for software startup founders. | [Agent](./.cursor/agents/incorporation-startup-stack-guardian.md) · [Skill](./.cursor/skills/incorporation-startup-stack-weapon/) | [Agent](./.claude/agents/incorporation-startup-stack-guardian.md) · [Skill](./.claude/skills/incorporation-startup-stack-weapon/) | [Skill](./.cowork/skills/incorporation-startup-stack-weapon.skill) |
+| **Investor Cap Table** | Cap-table management and fundraising paperwork specialist for startup founders. | [Agent](./.cursor/agents/investor-cap-table-guardian.md) · [Skill](./.cursor/skills/investor-cap-table-weapon/) | [Agent](./.claude/agents/investor-cap-table-guardian.md) · [Skill](./.claude/skills/investor-cap-table-weapon/) | [Skill](./.cowork/skills/investor-cap-table-weapon.skill) |
+| **Kanban Flow** | Kanban method specialist , WIP limit design and enforcement, flow-metric calculation (cycle time, lead time, throughput, flow efficiency), Little's Law diagnostic... | [Agent](./.cursor/agents/kanban-flow-guardian.md) · [Skill](./.cursor/skills/kanban-flow-weapon/) | [Agent](./.claude/agents/kanban-flow-guardian.md) · [Skill](./.claude/skills/kanban-flow-weapon/) | [Skill](./.cowork/skills/kanban-flow-weapon.skill) |
+| **Knowledge** | Authors narrative knowledge documentation for any repository , the human-readable, technically deep domain docs under `library/knowledge/private/<domain>/`. | [Agent](./.cursor/agents/knowledge-guardian.md) · [Skill](./.cursor/skills/knowledge-weapon/) | [Agent](./.claude/agents/knowledge-guardian.md) · [Skill](./.claude/skills/knowledge-weapon/) | [Skill](./.cowork/skills/knowledge-weapon.skill) |
+| **Knowledge Base Help Center** | Customer-facing knowledge base specialist , platform selection (Intercom Articles, Help Scout Docs, ReadMe.com, Document360, HelpJuice, Zendesk Guide), search-fir... | [Agent](./.cursor/agents/knowledge-base-help-center-guardian.md) · [Skill](./.cursor/skills/knowledge-base-help-center-weapon/) | [Agent](./.claude/agents/knowledge-base-help-center-guardian.md) · [Skill](./.claude/skills/knowledge-base-help-center-weapon/) | [Skill](./.cowork/skills/knowledge-base-help-center-weapon.skill) |
+| **Legal Docs** | SaaS legal documentation specialist for Terms of Service, Privacy Policy, DPA, MSA, and Cookie Notice. | [Agent](./.cursor/agents/legal-docs-guardian.md) · [Skill](./.cursor/skills/legal-docs-weapon/) | [Agent](./.claude/agents/legal-docs-guardian.md) · [Skill](./.claude/skills/legal-docs-weapon/) | [Skill](./.cowork/skills/legal-docs-weapon.skill) |
+| **Library** | Owns the full documentation lifecycle for any repository , scaffolds the canonical `library/` folder on first run, ingests GitHub issues into IRDs, generates feat... | [Agent](./.cursor/agents/library-guardian.md) · [Skill](./.cursor/skills/library-weapon/) | [Agent](./.claude/agents/library-guardian.md) · [Skill](./.claude/skills/library-weapon/) | [Skill](./.cowork/skills/library-weapon.skill) |
+| **Lighthouse Pagespeed** | Lighthouse + PageSpeed Insights specialist , running audits locally vs in CI (LHCI 0.15.x / GitHub Actions), interpreting all four audit categories (Performance,... | [Agent](./.cursor/agents/lighthouse-pagespeed-guardian.md) · [Skill](./.cursor/skills/lighthouse-pagespeed-weapon/) | [Agent](./.claude/agents/lighthouse-pagespeed-guardian.md) · [Skill](./.claude/skills/lighthouse-pagespeed-weapon/) | [Skill](./.cowork/skills/lighthouse-pagespeed-weapon.skill) |
+| **Live Chat Support** | Customer support surface specialist , Intercom, Crisp, Plain, Pylon, Help Scout , widget integration, HMAC/JWT identity verification, conversation routing, AI def... | [Agent](./.cursor/agents/live-chat-support-guardian.md) · [Skill](./.cursor/skills/live-chat-support-weapon/) | [Agent](./.claude/agents/live-chat-support-guardian.md) · [Skill](./.claude/skills/live-chat-support-weapon/) | [Skill](./.cowork/skills/live-chat-support-weapon.skill) |
+| **Markdown Mdx Content Pipeline** | Markdown/MDX content processing specialist. | [Agent](./.cursor/agents/markdown-mdx-content-pipeline-guardian.md) · [Skill](./.cursor/skills/markdown-mdx-content-pipeline-weapon/) | [Agent](./.claude/agents/markdown-mdx-content-pipeline-guardian.md) · [Skill](./.claude/skills/markdown-mdx-content-pipeline-weapon/) | [Skill](./.cowork/skills/markdown-mdx-content-pipeline-weapon.skill) |
+| **Mind** | Cognitive-layer specialist for the deploying product , coach/agent routing, prompt cascade, RAG / GraphRAG, three-tier memory, observability, evaluation, multimod... | [Agent](./.cursor/agents/mind-guardian.md) · [Skill](./.cursor/skills/mind-weapon/) | [Agent](./.claude/agents/mind-guardian.md) · [Skill](./.claude/skills/mind-weapon/) | [Skill](./.cowork/skills/mind-weapon.skill) |
+| **Modal Toast Dialog** | Accessible overlay specialist for React. | [Agent](./.cursor/agents/modal-toast-dialog-guardian.md) · [Skill](./.cursor/skills/modal-toast-dialog-weapon/) | [Agent](./.claude/agents/modal-toast-dialog-guardian.md) · [Skill](./.claude/skills/modal-toast-dialog-weapon/) | [Skill](./.cowork/skills/modal-toast-dialog-weapon.skill) |
+| **Newsletter Platform** | Newsletter-as-channel specialist for product builders and founders , platform selection (Beehiiv, ConvertKit/Kit, Loops, Substack, Resend Audiences, Ghost), embed... | [Agent](./.cursor/agents/newsletter-platform-guardian.md) · [Skill](./.cursor/skills/newsletter-platform-weapon/) | [Agent](./.claude/agents/newsletter-platform-guardian.md) · [Skill](./.claude/skills/newsletter-platform-weapon/) | [Skill](./.cowork/skills/newsletter-platform-weapon.skill) |
+| **Okr Goal Setting** | OKR methodology specialist , writes, grades, and iterates on Objectives and Key Results. | [Agent](./.cursor/agents/okr-goal-setting-guardian.md) · [Skill](./.cursor/skills/okr-goal-setting-weapon/) | [Agent](./.claude/agents/okr-goal-setting-guardian.md) · [Skill](./.claude/skills/okr-goal-setting-weapon/) | [Skill](./.cowork/skills/okr-goal-setting-weapon.skill) |
+| **Payments** | Stripe (non-Connect) integration specialist , Checkout, Payment Intents, Subscriptions, Customer Portal, Invoicing, Payment Links, and webhook processing. | [Agent](./.cursor/agents/payments-guardian.md) · [Skill](./.cursor/skills/payments-weapon/) | [Agent](./.claude/agents/payments-guardian.md) · [Skill](./.claude/skills/payments-weapon/) | [Skill](./.cowork/skills/payments-weapon.skill) |
+| **Preact** | Preact 11 specialist , signals API (v2 with createModel/useModel/action), preact/compat migration from React (alias setup, known gaps, compat blockers), third-par... | [Agent](./.cursor/agents/preact-guardian.md) · [Skill](./.cursor/skills/preact-weapon/) | [Agent](./.claude/agents/preact-guardian.md) · [Skill](./.claude/skills/preact-weapon/) | [Skill](./.cowork/skills/preact-weapon.skill) |
+| **Product Feedback Roadmap** | Customer-feedback-to-roadmap loop specialist , Userback, Canny, Featurebase, Productboard, Frill, Productlane , in-app-widget vs portal vs voting-board taxonomy,... | [Agent](./.cursor/agents/product-feedback-roadmap-guardian.md) · [Skill](./.cursor/skills/product-feedback-roadmap-weapon/) | [Agent](./.claude/agents/product-feedback-roadmap-guardian.md) · [Skill](./.claude/skills/product-feedback-roadmap-weapon/) | [Skill](./.cowork/skills/product-feedback-roadmap-weapon.skill) |
+| **Product Tour Onboarding Ui** | In-app product tour and onboarding UI specialist. | [Agent](./.cursor/agents/product-tour-onboarding-ui-guardian.md) · [Skill](./.cursor/skills/product-tour-onboarding-ui-weapon/) | [Agent](./.claude/agents/product-tour-onboarding-ui-guardian.md) · [Skill](./.claude/skills/product-tour-onboarding-ui-weapon/) | [Skill](./.cowork/skills/product-tour-onboarding-ui-weapon.skill) |
+| **Python** | Python architecture specialist for Django + Django Ninja + FastAPI + Celery + Channels + pytest + uv codebases , enforces the canonical stack (Pydantic v2 at boun... | [Agent](./.cursor/agents/python-guardian.md) · [Skill](./.cursor/skills/python-weapon/) | [Agent](./.claude/agents/python-guardian.md) · [Skill](./.claude/skills/python-weapon/) | [Skill](./.cowork/skills/python-weapon.skill) |
+| **Quality** | Quality-assurance reviewer that audits a completed implementation against its source plan document (a feature PRD at `library/requirements/features/feature-<###>-... | [Agent](./.cursor/agents/quality-guardian.md) · [Skill](./.cursor/skills/quality-weapon/) | [Agent](./.claude/agents/quality-guardian.md) · [Skill](./.claude/skills/quality-weapon/) | [Skill](./.cowork/skills/quality-weapon.skill) |
+| **React** | React architecture specialist for React 18/19 codebases , bulletproof-react patterns, awesome-react ecosystem, React 19 idioms (Server Components, Suspense, Actio... | [Agent](./.cursor/agents/react-guardian.md) · [Skill](./.cursor/skills/react-weapon/) | [Agent](./.claude/agents/react-guardian.md) · [Skill](./.claude/skills/react-weapon/) | [Skill](./.cowork/skills/react-weapon.skill) |
+| **Readme Writing** | Authors, audits, and restructures README files so they convert visitors into users. | [Agent](./.cursor/agents/readme-writing-guardian.md) · [Skill](./.cursor/skills/readme-writing-weapon/) | [Agent](./.claude/agents/readme-writing-guardian.md) · [Skill](./.claude/skills/readme-writing-weapon/) | [Skill](./.cowork/skills/readme-writing-weapon.skill) |
+| **Retrospective** | Retrospective facilitator and follow-through enforcer for engineering teams. | [Agent](./.cursor/agents/retrospective-guardian.md) · [Skill](./.cursor/skills/retrospective-weapon/) | [Agent](./.claude/agents/retrospective-guardian.md) · [Skill](./.claude/skills/retrospective-weapon/) | [Skill](./.cowork/skills/retrospective-weapon.skill) |
+| **Review Funnels G2** | Review collection and online-reputation specialist for SaaS products. | [Agent](./.cursor/agents/review-funnels-g2-guardian.md) · [Skill](./.cursor/skills/review-funnels-g2-weapon/) | [Agent](./.claude/agents/review-funnels-g2-guardian.md) · [Skill](./.claude/skills/review-funnels-g2-weapon/) | [Skill](./.cowork/skills/review-funnels-g2-weapon.skill) |
+| **Runbook Writing** | Operational runbook authorship specialist , canonical templates (break-fix, scheduled operation, diagnostic), the no-implied-context audit protocol, exact-command... | [Agent](./.cursor/agents/runbook-writing-guardian.md) · [Skill](./.cursor/skills/runbook-writing-weapon/) | [Agent](./.claude/agents/runbook-writing-guardian.md) · [Skill](./.claude/skills/runbook-writing-weapon/) | [Skill](./.cowork/skills/runbook-writing-weapon.skill) |
+| **Scripture Historian** | Phase 1.5 of the Legion AI Tools Factory pipeline. | [Agent](./.cursor/agents/scripture-historian.md) | [Agent](./.claude/agents/scripture-historian.md) | n/a |
+| **Security** | Security audit and remediation specialist for React, Next.js, TypeScript, and Node.js codebases. | [Agent](./.cursor/agents/security-guardian.md) · [Skill](./.cursor/skills/security-weapon/) | [Agent](./.claude/agents/security-guardian.md) · [Skill](./.claude/skills/security-weapon/) | [Skill](./.cowork/skills/security-weapon.skill) |
+| **Seo Aeo** | Next.js 14+ App Router SEO and Answer Engine Optimization specialist. | [Agent](./.cursor/agents/seo-aeo-guardian.md) · [Skill](./.cursor/skills/seo-aeo-weapon/) | [Agent](./.claude/agents/seo-aeo-guardian.md) · [Skill](./.claude/skills/seo-aeo-weapon/) | [Skill](./.cowork/skills/seo-aeo-weapon.skill) |
+| **Slack App** | Slack app development specialist. | [Agent](./.cursor/agents/slack-app-guardian.md) · [Skill](./.cursor/skills/slack-app-weapon/) | [Agent](./.claude/agents/slack-app-guardian.md) · [Skill](./.claude/skills/slack-app-weapon/) | [Skill](./.cowork/skills/slack-app-weapon.skill) |
+| **Social Media Marketing Organic** | Genuine organic social media strategy for solo developers, founders, and small product teams (up to ~10 people). | [Agent](./.cursor/agents/social-media-marketing-organic-guardian.md) · [Skill](./.cursor/skills/social-media-marketing-organic-weapon/) | [Agent](./.claude/agents/social-media-marketing-organic-guardian.md) · [Skill](./.claude/skills/social-media-marketing-organic-weapon/) | [Skill](./.cowork/skills/social-media-marketing-organic-weapon.skill) |
+| **Status Page** | Public status page specialist , platform selection (Statuspage/Atlassian, Better Stack, Instatus, Cachet OSS), component tree architecture, incident communication... | [Agent](./.cursor/agents/status-page-guardian.md) · [Skill](./.cursor/skills/status-page-weapon/) | [Agent](./.claude/agents/status-page-guardian.md) · [Skill](./.claude/skills/status-page-weapon/) | [Skill](./.cowork/skills/status-page-weapon.skill) |
+| **Technical Writing Craft** | Reviews and writes technical documentation using the Diataxis framework, inverted-pyramid prose structure, code-example discipline, voice and tone consistency, an... | [Agent](./.cursor/agents/technical-writing-craft-guardian.md) · [Skill](./.cursor/skills/technical-writing-craft-weapon/) | [Agent](./.claude/agents/technical-writing-craft-guardian.md) · [Skill](./.claude/skills/technical-writing-craft-weapon/) | [Skill](./.cowork/skills/technical-writing-craft-weapon.skill) |
+| **Telegram Bot** | Telegram Bot specialist , Bot API (up to 10.0, May 2026 including guest mode and managed bots), grammY v1.x (TypeScript, recommended 2026 choice over abandoned Te... | [Agent](./.cursor/agents/telegram-bot-guardian.md) · [Skill](./.cursor/skills/telegram-bot-weapon/) | [Agent](./.claude/agents/telegram-bot-guardian.md) · [Skill](./.claude/skills/telegram-bot-weapon/) | [Skill](./.cowork/skills/telegram-bot-weapon.skill) |
+| **Terminal Bash** | Terminal productivity specialist for Bash/Zsh/Fish configuration, modern CLI tools (ripgrep, fd, fzf, bat, eza, zoxide), shell scripting best practices, dotfile a... | [Agent](./.cursor/agents/terminal-bash-guardian.md) · [Skill](./.cursor/skills/terminal-bash-weapon/) | [Agent](./.claude/agents/terminal-bash-guardian.md) · [Skill](./.claude/skills/terminal-bash-weapon/) | [Skill](./.cowork/skills/terminal-bash-weapon.skill) |
+| **Thanos Gauntlet Glove** | End-to-end PRD execution orchestrator. | [Skill](./.cursor/skills/thanos-gauntlet-glove/) | [Skill](./.claude/skills/thanos-gauntlet-glove/) | [Skill](./.cowork/skills/thanos-gauntlet-glove.skill) |
+| **Typography Font** | Typography and font-loading specialist for web products , variable fonts, Google Fonts vs Fontsource vs self-host, the FOIT/FOUT/FOFT loading story, font-display... | [Agent](./.cursor/agents/typography-font-guardian.md) · [Skill](./.cursor/skills/typography-font-weapon/) | [Agent](./.claude/agents/typography-font-guardian.md) · [Skill](./.claude/skills/typography-font-weapon/) | [Skill](./.cowork/skills/typography-font-weapon.skill) |
+| **Ux Ui** | Enforces a product's design system from its source-of-truth folder (tokens, utilities, components, screens) and governs integration with shadcn/ui, Mantine, Lucid... | [Agent](./.cursor/agents/ux-ui-guardian.md) · [Skill](./.cursor/skills/ux-ui-weapon/) | [Agent](./.claude/agents/ux-ui-guardian.md) · [Skill](./.claude/skills/ux-ui-weapon/) | [Skill](./.cowork/skills/ux-ui-weapon.skill) |
+| **Weapon Forge** | Phase 2 of the Legion AI Tools Factory pipeline. | [Skill](./.cursor/skills/weapon-forge/) | [Skill](./.claude/skills/weapon-forge/) | [Skill](./.cowork/skills/weapon-forge.skill) |
+| **Website** | Builds production-grade SvelteKit (Svelte 5) + Payload CMS + Supabase websites end-to-end from a brief, applying a 12-phase site-template playbook (monorepo archi... | [Agent](./.cursor/agents/website-guardian.md) · [Skill](./.cursor/skills/website-weapon/) | [Agent](./.claude/agents/website-guardian.md) · [Skill](./.claude/skills/website-weapon/) | [Skill](./.cowork/skills/website-weapon.skill) |
+| **Wiki** | Extracts code entities (functions, classes, modules, services, endpoints, env vars, config keys, data models, React components, SQL tables, queues, cron jobs, fea... | [Agent](./.cursor/agents/wiki-guardian.md) · [Skill](./.cursor/skills/wiki-weapon/) | [Agent](./.claude/agents/wiki-guardian.md) · [Skill](./.claude/skills/wiki-weapon/) | [Skill](./.cowork/skills/wiki-weapon.skill) |
+
+</details>
 
 ---
 
@@ -132,7 +277,7 @@ The cost is writing things down. The return is a codebase that does not punish y
 
 ## The exact processes
 
-These are the start-to-finish workflows. Each one runs through the bundled Cursor agents and skills. You drive them with plain-language commands. The agent does the filing, naming, and numbering by the rules baked into the skills.
+These are the start-to-finish workflows. Each one runs through the bundled agents and skills. You drive them with plain-language commands. The agent does the filing, naming, and numbering by the rules baked into the skills.
 
 ### Create the knowledge base from scratch
 
@@ -179,7 +324,7 @@ Repeat module by module until your shipped code has a paper trail that matches r
 
 ## Wielding the Thanos Gauntlet Glove
 
-Once your PRDs and IRDs are written, the Thanos Gauntlet Glove is how you execute them. It is the orchestrator skill at `.cursor/skills/thanos-gauntlet-glove/`. You point it at a set of PRDs and it drives them to 100 percent completion: spec to merged, CI-green PR, with no partial credit allowed. You do not micromanage it. You command it and hold it to the standard.
+Once your PRDs and IRDs are written, the Thanos Gauntlet Glove is how you execute them. It is the orchestrator skill at [`.cursor/skills/thanos-gauntlet-glove/`](./.cursor/skills/thanos-gauntlet-glove/). You point it at a set of PRDs and it drives them to 100 percent completion: spec to merged, CI-green PR, with no partial credit allowed. You do not micromanage it. You command it and hold it to the standard.
 
 **Invoke it** with phrases like "execute the PRDs", "run the gauntlet", "snap it", or "ship these PRDs." The agent then runs four phases:
 
@@ -201,7 +346,7 @@ The standard is the whole point. Every PRD, every acceptance criterion, verified
 
 ## License
 
-See [`LICENSE.md`](LICENSE.md).
+Source-available. Use the skills and agents anywhere, including commercially. Do not sell them or pass them off as your own, and credit Legion Code Inc. See [`LICENSE.md`](LICENSE.md) for the full terms.
 
 ---
 

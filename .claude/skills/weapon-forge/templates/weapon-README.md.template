@@ -1,0 +1,33 @@
+# {{Weapon Display Name}}
+
+{{One sentence: what this Weapon equips its paired Angel to do.}}
+
+**Paired Angel:** [`{{angel-name}}`](../../agents/{{angel-name}}.md)
+**Command Brief:** [`{{angel-name}}-command-brief.md`](../../command-briefs/{{angel-name}}-command-brief.md)
+
+---
+
+## Purpose
+
+{{Two to three sentences describing what this Weapon is for, why it exists, and how the paired Angel uses it.}}
+
+## Folder layout
+
+- `SKILL.md` — the entry point Cursor loads when this skill triggers.
+- `guides/` — procedural instructions, numbered for ordering.
+- `examples/` — worked input/output cases demonstrating the guides.
+- `templates/` — reusable stubs the Angel fills in when producing output.
+- `reports/` — template for the output shape and archive of past runs.
+- `research/` — source material and research notes behind the guides.
+
+## When to use
+
+Triggered via {{angel-name}}. See [`SKILL.md`](./SKILL.md) for the full triggering description.
+
+## Maintenance
+
+This Weapon's claims trace to `research/`. When the underlying sources change (documentation updates, new best practices, deprecations), update the research notes first, then revise the guides.
+
+---
+
+*Forged by the Legion AI Tools Factory. Part of the legion curated by [Mario Aldayuz a.k.a @thenotoriousllama](https://github.com/thenotoriousllama).*
