@@ -1,6 +1,6 @@
 ---
 name: thanos-gauntlet-glove
-description: End-to-end PRD execution orchestrator. Use this skill whenever the user wants PRDs executed to 100% completion with sub-agent waves, acceptance criteria tracked to zero open items, guardian quality/security loops, and a commit-push-PR-CI pipeline. Trigger on phrases like "execute the PRDs", "run the PRDs", "complete the acceptance criteria", "snap it", "gauntlet", "thanos", "run the gauntlet", "ship these PRDs", "finish everything in the PRD", or any request to take a set of PRDs from spec to merged PR with no partial completion allowed. Also use when the user asks for wave-based parallel sub-agent planning, model selection per task, or a watchdog over stalled sub-agents.
+description: End-to-end PRD execution orchestrator. Use this skill whenever the user wants PRDs executed to 100% completion with sub-agent waves, acceptance criteria tracked to zero open items, worker-bee quality/security loops, and a commit-push-PR-CI pipeline. Trigger on phrases like "execute the PRDs", "run the PRDs", "complete the acceptance criteria", "snap it", "gauntlet", "thanos", "run the gauntlet", "ship these PRDs", "finish everything in the PRD", or any request to take a set of PRDs from spec to merged PR with no partial completion allowed. Also use when the user asks for wave-based parallel sub-agent planning, model selection per task, or a watchdog over stalled sub-agents.
 ---
 
 # Thanos Gauntlet Glove: PRD Execution Orchestrator
@@ -47,22 +47,22 @@ Arm a watchdog over every running sub-agent:
 - A stall means the task was too big or too vague. Do not relaunch the same task at the same scope. Break it into multiple smaller sub-agents with tighter briefs and re-dispatch. If a decomposed piece stalls again, decompose again.
 - Log every termination and decomposition in the ledger so the history is traceable.
 
-## Phase 2: Guardian Gauntlet
+## Phase 2: Worker Bee Gauntlet
 
 Only after the ledger reads fully VERIFIED:
 
-1. Run /quality-guardian and /security-guardian.
+1. Run /quality-worker-bee and /security-worker-bee.
 2. Triage their output. Anything rated medium severity or higher gets fixed. Dispatch fixes through sub-agents same as Phase 1, with the same no-partial-credit standard.
-3. Re-run both guardians after the fixes land.
-4. Loop steps 1 through 3 until both guardians come back with zero findings at medium or above. Low and informational findings get logged, not litigated.
-5. Confirm the guardian fixes did not break anything: full test suite green, ledger still fully VERIFIED. If a fix regressed a criterion, that criterion reopens and you go back to Phase 1 for it.
+3. Re-run both worker-bees after the fixes land.
+4. Loop steps 1 through 3 until both worker-bees come back with zero findings at medium or above. Low and informational findings get logged, not litigated.
+5. Confirm the worker-bee fixes did not break anything: full test suite green, ledger still fully VERIFIED. If a fix regressed a criterion, that criterion reopens and you go back to Phase 1 for it.
 
 ## Phase 3: Ship
 
-When the ledger is fully VERIFIED and both guardians are clean:
+When the ledger is fully VERIFIED and both worker-bees are clean:
 
 1. Commit with a clear, descriptive message. Push the branch.
-2. Open a PR for the user's review. The PR description must include: a summary of what shipped, the complete AC Ledger with every criterion marked VERIFIED, the wave plan that was executed, model selections used, and the final guardian results.
+2. Open a PR for the user's review. The PR description must include: a summary of what shipped, the complete AC Ledger with every criterion marked VERIFIED, the wave plan that was executed, model selections used, and the final worker-bee results.
 3. Monitor CI on the PR. Do not walk away. If CI fails, diagnose the failure, dispatch a sub-agent to fix it, push the fix, and watch the next run. Loop until CI is fully green. CI flakes get retried once before you treat them as real failures.
 
 ## Non-Negotiables
@@ -78,4 +78,5 @@ When the ledger is fully VERIFIED and both guardians are clean:
 References to skills and agents included at end:
 
 - /loop — iterative sub-agent execution loop
-- /quality-guardi
+- /quality-worker-bee — code quality review agent
+- /security-worker-bee — security review agent

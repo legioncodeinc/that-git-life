@@ -1,3 +1,0 @@
-# seo-aeo-weapon
-
-Cursor skill that equips the `seo-aeo-guardian` Angel with the complete 2025–2026 Next.js SEO + Answer Engine Optimization playbook, encoded as numbered guides mirroring the canonical 12-section reference document. The Weapon treats the three parallel discovery systems — traditional search (Google, Bing), AI Overviews / Featured Snippets, and AI assistants (ChatGPT, Perplexity, Claude) — as co-equal citizens, requires schema validation and measured Core Web Vitals before ship, and scopes to Next.js 14+ App Router with explicit degradation flags for Pages Router. Canonical playbook: `NEXTJS_SEO_AEO_COMPLETE_GUIDE_2026.md` (2,175 lines, mirrored across `guides/01`–`guides/11`).

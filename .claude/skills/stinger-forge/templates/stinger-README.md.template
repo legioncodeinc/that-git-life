@@ -1,0 +1,33 @@
+# {{Stinger Display Name}}
+
+{{One sentence: what this Stinger equips its paired Bee to do.}}
+
+**Paired Bee:** [`{{bee-name}}`](../../agents/{{bee-name}}.md)
+**Command Brief:** [`{{bee-name}}-command-brief.md`](../../command-briefs/{{bee-name}}-command-brief.md)
+
+---
+
+## Purpose
+
+{{Two to three sentences describing what this Stinger is for, why it exists, and how the paired Bee uses it.}}
+
+## Folder layout
+
+- `SKILL.md` — the entry point Cursor loads when this skill triggers.
+- `guides/` — procedural instructions, numbered for ordering.
+- `examples/` — worked input/output cases demonstrating the guides.
+- `templates/` — reusable stubs the Bee fills in when producing output.
+- `reports/` — template for the output shape and archive of past runs.
+- `research/` — source material and research notes behind the guides.
+
+## When to use
+
+Triggered via {{bee-name}}. See [`SKILL.md`](./SKILL.md) for the full triggering description.
+
+## Maintenance
+
+This Stinger's claims trace to `research/`. When the underlying sources change (documentation updates, new best practices, deprecations), update the research notes first, then revise the guides.
+
+---
+
+*Forged by the Legion AI Tools Factory. Part of the legion curated by [Mario Aldayuz a.k.a @thenotoriousllama](https://github.com/thenotoriousllama).*

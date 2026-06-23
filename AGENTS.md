@@ -6,7 +6,7 @@
 
 An agent (also called a subagent) is a focused AI persona with a narrow job, its own instructions, and its own guardrails. Instead of one general assistant trying to do everything, you give each domain its own specialist. A primary orchestrator reads the request, decides which agent owns it, and hands the work off. The agent runs with a clean, purpose-built brief and returns its result.
 
-In this repo, agents are called **Angels**. Each Angel owns exactly one domain (Git, auth, databases, SEO, payments, and so on) and is paired with exactly one **Weapon** (a skill, see [SKILLS.md](./SKILLS.md)). The Angel is the persona and the judgment. The Weapon is the procedural arsenal it reads from. Routing across the whole roster is handled by a skill called `god`, which keeps an index of every Angel, its trigger phrases, and when NOT to use it.
+In this repo, agents are called **Bees**. Each Bee owns exactly one domain (Git, auth, databases, SEO, payments, and so on) and is paired with exactly one **Stinger** (a skill, see [SKILLS.md](./SKILLS.md)). The Bee is the persona and the judgment. The Stinger is the procedural arsenal it reads from. Routing across the whole roster is handled by a skill called `beekeeper-suit`, which keeps an index of every Bee, its trigger phrases, and when NOT to use it.
 
 The agents live in [`.cursor/agents/`](./.cursor/agents/) (and a mirror in [`.claude/agents/`](./.claude/agents/)).
 
@@ -16,13 +16,13 @@ An agent is a single Markdown file with YAML frontmatter on top and instructions
 
 ```markdown
 ---
-name: git-guardian
+name: git-worker-bee
 description: When to use this agent and what it owns. The orchestrator reads
   this to decide routing, so it is specific about trigger phrases and scope.
 proactive: true
 ---
 
-# Git Guardian
+# Git Worker Bee
 
 Identity, responsibilities, hard rules, and the workflow the agent follows.
 ```
@@ -45,15 +45,15 @@ The short version: agents are a first-class concept in Cursor and Claude Code, a
 
 This is not a loose pile of agents. It is a factory with a chain of command:
 
-- **God** (`.cursor/skills/god/`) is the router. It holds the roster and decides which Angel owns a request.
-- **Angels** (`.cursor/agents/*-guardian.md` and a few specials) are the domain specialists.
-- **Weapons** (`.cursor/skills/*-weapon/`) are the skills each Angel reads from.
-- **The factory line** (`command-center`, `scripture-historian`, `weapon-forge`, `angel-creator`, `god-registrar`) is how new Angel + Weapon pairs get created, researched, written, and registered. `gods-hand` and `big-bang-space` drive that queue.
+- **beekeeper-suit** (`.cursor/skills/beekeeper-suit/`) is the router. It holds the roster and decides which Bee owns a request.
+- **Bees** (`.cursor/agents/*-worker-bee.md` and a few specials) are the domain specialists.
+- **Stingers** (`.cursor/skills/*-stinger/`) are the skills each Bee reads from.
+- **The factory line** (`command-center`, `scripture-historian`, `stinger-forge`, `bee-creator`, `hive-registrar`) is how new Bee + Stinger pairs get created, researched, written, and registered. `the-queen` and the proposal step drive that queue.
 
-To see every Angel and its paired Weapon with direct links, check the catalog in the main [README](./README.md).
+To see every Bee and its paired Stinger with direct links, check the catalog in the main [README](./README.md).
 
 ## Related
 
-- [SKILLS.md](./SKILLS.md) — the Weapons that Angels wield
+- [SKILLS.md](./SKILLS.md) — the Stingers that Bees wield
 - [HOOKS.md](./HOOKS.md) — event-driven automation
 - [RULES.md](./RULES.md) — always-on guidance that constrains every agent

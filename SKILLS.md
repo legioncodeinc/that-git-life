@@ -8,14 +8,14 @@ A skill is a packaged, reusable capability an AI agent can load on demand. It bu
 
 Skills use progressive disclosure. The agent first reads the short `SKILL.md` to understand scope, then opens only the specific guide or template it needs for the task at hand. That keeps the agent focused and the context lean.
 
-In this repo, skills are called **Weapons**. Each Weapon is the procedural arsenal for one Angel (see [AGENTS.md](./AGENTS.md)). They live in [`.cursor/skills/`](./.cursor/skills/), mirrored to [`.claude/skills/`](./.claude/skills/), and packaged for Cowork in [`.cowork/skills/`](./.cowork/skills/).
+In this repo, skills are called **Stingers**. Each Stinger is the procedural arsenal for one Bee (see [AGENTS.md](./AGENTS.md)). They live in [`.cursor/skills/`](./.cursor/skills/), mirrored to [`.claude/skills/`](./.claude/skills/), and packaged for Cowork in [`.cowork/skills/`](./.cowork/skills/).
 
 ## Anatomy of a skill
 
 A skill is a folder named for the skill, with `SKILL.md` at its root:
 
 ```
-git-weapon/
+git-stinger/
   SKILL.md            name + description frontmatter, scope, and routing to guides
   guides/             step-by-step playbooks for each sub-task
   templates/          copy-paste starting points
@@ -27,7 +27,7 @@ The `SKILL.md` frontmatter is what makes a skill discoverable:
 
 ```markdown
 ---
-name: git-weapon
+name: git-stinger
 description: What the skill does and the exact phrases or situations that
   should trigger it, plus what it should NOT be used for.
 ---
@@ -53,6 +53,6 @@ Skill docs are full of placeholders like `prd-<###>-<slug>`. On import, Cowork c
 
 ## Related
 
-- [AGENTS.md](./AGENTS.md) — the Angels that wield these Weapons
+- [AGENTS.md](./AGENTS.md) — the Bees that wield these Stingers
 - [HOOKS.md](./HOOKS.md) — event-driven automation
 - [RULES.md](./RULES.md) — always-on guidance

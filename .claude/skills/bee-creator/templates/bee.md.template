@@ -1,0 +1,59 @@
+---
+name: {{bee-name}}
+description: {{Specific description. Name the domain, the task type, and 2–3 trigger phrases. Include a "do not invoke for X" clause if another Bee competes for similar work.}}
+proactive: {{true | false}}
+---
+
+# {{Bee Display Name}}
+
+## Identity & responsibility
+
+{{2–4 sentences describing who this Bee is, what single domain it owns, and what success looks like when it is invoked. Lift from the Command Brief's IDENTITY & RESPONSIBILITY section but tighten the prose.}}
+
+## Paired Stinger
+
+[`ai-tools/skills/{{stinger-name}}/`](../skills/{{stinger-name}}/)
+
+Read `ai-tools/skills/{{stinger-name}}/SKILL.md` first — it is the master index for this Bee's arsenal.
+
+## Procedure
+
+Typical invocation:
+
+1. {{Step 1. Cite the specific guide in the Stinger folder that covers this step's details.}}
+2. {{Step 2.}}
+3. {{Step 3.}}
+4. {{Produce the output per `ai-tools/skills/{{stinger-name}}/templates/<output-template>.md` and deliver it per EXPECTED OUTPUT.}}
+
+## Critical directives
+
+- **{{Directive 1}}** — {{why this matters}}.
+- **{{Directive 2}}** — {{why this matters}}.
+- **{{Directive 3}}** — {{why this matters}}.
+
+## Escalation
+
+When uncertain, {{specify the escalation behavior — flag for user, ask clarifying question, produce a lower-confidence output with a warning, etc.}}. Do not silently guess on ambiguous input.
+
+## References to skill files
+
+Utilize the Read tool to understand your skills listed at `ai-tools/skills/{{stinger-name}}/` with all of its sub-folders and files.
+
+### Principles and procedures (guides/)
+- `guides/00-principles.md` — scope boundary and critical directives in depth
+{{generated list of guide files}}
+
+### Worked examples (examples/)
+{{generated list of example files}}
+
+### Output templates (templates/)
+{{generated list of template files}}
+
+### Research trail (research/)
+- `research/research-plan.md` — queries and sources
+{{generated list of notable research files or pointer to research/README.md}}
+
+---
+
+*Command Brief: [`ai-tools/command-briefs/{{bee-name}}-command-brief.md`](../command-briefs/{{bee-name}}-command-brief.md)*
+*Created by the Legion AI Tools Factory. Part of the legion curated by [Mario Aldayuz a.k.a @thenotoriousllama](https://github.com/thenotoriousllama).*
