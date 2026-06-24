@@ -21,6 +21,14 @@ From this repository:
 node scripts/build-codex-adapter.mjs --out /path/to/project --profile autopilot --agents-mode both
 ```
 
+To install only the user-level launcher into a Codex home directory:
+
+```bash
+node scripts/build-codex-adapter.mjs --out "$CODEX_HOME" --install-mode global-launcher
+```
+
+That global launcher is intentionally small. It installs `skills/that-git-life/SKILL.md` plus a `skills/the-git-life/SKILL.md` alias, then bootstraps the project-local adapter into whichever repo you invoke it from. Set `THAT_GIT_LIFE_SOURCE` to the That Git Life source checkout, or pass `--source-root <path>` when creating a private local launcher. Omit `--source-root` for shareable launcher output.
+
 Profiles:
 
 - `core`: installs the router, Beekeeper Suit, and a compact set of engineering Stingers. This is the recommended starting point.
@@ -30,7 +38,8 @@ Profiles:
 Flags:
 
 - `--agents-mode auto|fragment|merge|both`: controls how Codex guidance is written.
-- `--install-mode committed-project|local-only|ci-safe`: controls whether generated adapter assets are intended to be committed, kept local, or shared in CI-safe form.
+- `--install-mode committed-project|local-only|ci-safe|global-launcher`: controls whether generated adapter assets are intended to be committed, kept local, shared in CI-safe form, or installed as a user-level launcher.
+- `--source-root <path>`: optional source checkout embedded only in `global-launcher` output. Prefer `THAT_GIT_LIFE_SOURCE` for shareable setups.
 - `--merge-agents`: backwards-compatible alias for `--agents-mode both` when `--agents-mode` is not provided.
 - `--with-research`: copies Stinger `research/` folders into the target project. By default the adapter skips research folders to keep generated installs compact.
 - `--clean`: removes previously generated adapter skills, agents, hooks, and runtime logs before writing the new output.
@@ -40,6 +49,7 @@ Install modes:
 - `committed-project`: default and backwards-compatible mode. Writes durable repo-local adapter files intended to be committed with the project.
 - `local-only`: writes the same local runtime scaffolding but adds project-local `.git/info/exclude` entries for `.agents/`, `.codex/`, and `AGENTS.that-git-life.md` so the install can stay uncommitted.
 - `ci-safe`: writes deterministic adapter assets suitable for project sharing and validation, but skips project-local hook registration under `.codex/hooks.json`.
+- `global-launcher`: writes only user-level launcher skills under `skills/that-git-life/` and `skills/the-git-life/`. It does not write project-local `.agents/`, `.codex/`, or `AGENTS.*` files.
 
 Guidance modes:
 
@@ -68,6 +78,14 @@ AGENTS.that-git-life.md
 ```
 
 `ci-safe` installs omit `.codex/hooks.json` and `.codex/hooks/that-git-life-hook.mjs`.
+
+`global-launcher` installs instead write:
+
+```text
+skills/that-git-life/SKILL.md
+skills/that-git-life/global-launcher.json
+skills/the-git-life/SKILL.md
+```
 
 With `--agents-mode merge` or `--agents-mode both`, it writes or updates a managed block in `AGENTS.md`:
 
@@ -173,6 +191,8 @@ Focused adapter tests cover install modes, generated router wording, validation,
 ```bash
 node scripts/test-codex-adapter.mjs
 ```
+
+The focused test also validates `global-launcher`, including the `the-git-life` alias and the absence of embedded user-specific paths when `--source-root` is omitted.
 
 Run the generated doctor in a target project when you want a project-local health check:
 

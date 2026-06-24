@@ -4,12 +4,12 @@ import { join } from "node:path";
 
 function usage() {
   console.log(`Usage:
-  node scripts/validate-codex-adapter.mjs --root <generated-project>
+  node scripts/validate-codex-adapter.mjs --root <generated-project-or-codex-home> [--global-launcher]
 `);
 }
 
 function parseArgs(argv) {
-  const args = { root: "" };
+  const args = { root: "", globalLauncher: false };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--help" || arg === "-h") {
@@ -18,6 +18,10 @@ function parseArgs(argv) {
     }
     if (arg === "--root") {
       args.root = argv[++i] ?? "";
+      continue;
+    }
+    if (arg === "--global-launcher") {
+      args.globalLauncher = true;
       continue;
     }
     throw new Error(`Unknown argument: ${arg}`);
@@ -210,6 +214,36 @@ function validateRunSummary(root, errors) {
   }
 }
 
+function validateGlobalLauncher(root, errors) {
+  const canonical = join(root, "skills", "that-git-life", "SKILL.md");
+  const alias = join(root, "skills", "the-git-life", "SKILL.md");
+  const manifestPath = join(root, "skills", "that-git-life", "global-launcher.json");
+  for (const path of [canonical, alias, manifestPath]) {
+    if (!existsSync(path)) fail(errors, `missing ${path}`);
+  }
+  if (existsSync(canonical)) {
+    const text = readFileSync(canonical, "utf8");
+    const meta = parseFrontmatter(text);
+    if (meta.name !== "that-git-life") fail(errors, "global launcher canonical skill has wrong name");
+    if (!text.includes("THAT_GIT_LIFE_SOURCE")) fail(errors, "global launcher missing THAT_GIT_LIFE_SOURCE guidance");
+    if (!text.includes(".agents/skills/that-git-life/SKILL.md")) fail(errors, "global launcher missing project-local router guidance");
+  }
+  if (existsSync(alias)) {
+    const text = readFileSync(alias, "utf8");
+    const meta = parseFrontmatter(text);
+    if (meta.name !== "the-git-life") fail(errors, "global launcher alias skill has wrong name");
+    if (!text.includes("alias for `$that-git-life`")) fail(errors, "global launcher alias missing alias guidance");
+  }
+  if (existsSync(manifestPath)) {
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+    if (manifest.installMode !== "global-launcher") fail(errors, "global launcher manifest installMode is invalid");
+    if (manifest.canonicalSkill !== "that-git-life") fail(errors, "global launcher manifest canonicalSkill is invalid");
+    if (!Array.isArray(manifest.aliases) || !manifest.aliases.includes("the-git-life")) {
+      fail(errors, "global launcher manifest missing the-git-life alias");
+    }
+  }
+}
+
 function validateGeneratedText(file, text, errors) {
   const rel = file;
   const lines = text.split("\n");
@@ -229,6 +263,22 @@ function validateGeneratedText(file, text, errors) {
 function main() {
   const args = parseArgs(process.argv.slice(2));
   const errors = [];
+  if (args.globalLauncher) {
+    validateGlobalLauncher(args.root, errors);
+    const allGenerated = walkFiles(join(args.root, "skills", "that-git-life")).concat(walkFiles(join(args.root, "skills", "the-git-life")));
+    for (const file of allGenerated) {
+      const text = readFileSync(file, "utf8");
+      if (/\0/.test(text)) fail(errors, `${file}: contains NUL byte`);
+      validateGeneratedText(file, text, errors);
+    }
+    if (errors.length) {
+      console.error(JSON.stringify({ ok: false, root: args.root, installMode: "global-launcher", errors }, null, 2));
+      process.exit(1);
+    }
+    console.log(JSON.stringify({ ok: true, root: args.root, installMode: "global-launcher", skills: 2, agents: 0 }, null, 2));
+    return;
+  }
+
   const skills = validateSkills(args.root, errors);
   const agents = validateAgents(args.root, errors);
   validateHooks(args.root, errors);

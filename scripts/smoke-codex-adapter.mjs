@@ -148,6 +148,9 @@ function main() {
     const inspect = runJson("node", [join(target, ".codex", "that-git-life", "scripts", "tgl-inspect-project.mjs"), "--root", target]);
     const bootstrap = runJson("node", [join(target, ".codex", "that-git-life", "scripts", "tgl-bootstrap-library.mjs"), "--root", target]);
     const doctor = runJson("node", [join(target, ".codex", "that-git-life", "scripts", "tgl-doctor.mjs"), "--root", target]);
+    if (!doctor.ok) {
+      throw new Error(`tgl-doctor reported blockers: ${(doctor.blockers || []).join(", ")}`);
+    }
     const backwardsPrd = runJson("node", [
       join(target, ".codex", "that-git-life", "scripts", "tgl-backwards-prd.mjs"),
       "--root",

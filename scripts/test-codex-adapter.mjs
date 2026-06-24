@@ -48,6 +48,19 @@ function buildFixture(installMode) {
   return { target, build };
 }
 
+function buildGlobalLauncherFixture() {
+  const target = mkdtempSync(join(tmpdir(), "tgl-global-launcher-"));
+  const build = runJson("node", [
+    join(ROOT, "scripts", "build-codex-adapter.mjs"),
+    "--out",
+    target,
+    "--install-mode",
+    "global-launcher",
+    "--clean",
+  ]);
+  return { target, build };
+}
+
 function assertRouterWording(target) {
   const router = readFileSync(join(target, ".agents", "skills", "that-git-life", "SKILL.md"), "utf8");
   assert.match(router, /Prompt examples, route examples, and user-supplied path guesses are candidate inputs only/);
@@ -121,6 +134,72 @@ function main() {
     assert.equal(existsSync(join(transition.target, ".codex", "hooks.json")), false);
     const transitionValidation = runJson("node", [join(ROOT, "scripts", "validate-codex-adapter.mjs"), "--root", transition.target]);
     assert.equal(transitionValidation.ok, true);
+
+    const ignoreTransition = buildFixture("local-only");
+    retained.push(ignoreTransition.target);
+    assert.equal(run("git", ["check-ignore", ".agents"], { cwd: ignoreTransition.target }), ".agents");
+    runJson("node", [
+      join(ROOT, "scripts", "build-codex-adapter.mjs"),
+      "--out",
+      ignoreTransition.target,
+      "--profile",
+      "autopilot",
+      "--agents-mode",
+      "both",
+      "--install-mode",
+      "committed-project",
+    ]);
+    assert.throws(() => run("git", ["check-ignore", ".agents"], { cwd: ignoreTransition.target }));
+
+    const summaryTarget = buildFixture("committed-project");
+    retained.push(summaryTarget.target);
+    runJson("node", [
+      join(summaryTarget.target, ".codex", "that-git-life", "scripts", "tgl-run-summary.mjs"),
+      "--root",
+      summaryTarget.target,
+      "--command",
+      "first proof",
+      "--successful-proof-count",
+      "1",
+    ]);
+    runJson("node", [
+      join(ROOT, "scripts", "build-codex-adapter.mjs"),
+      "--out",
+      summaryTarget.target,
+      "--profile",
+      "autopilot",
+      "--agents-mode",
+      "both",
+      "--install-mode",
+      "committed-project",
+    ]);
+    const preserved = JSON.parse(readFileSync(join(summaryTarget.target, ".codex", "that-git-life", "run-summary.json"), "utf8"));
+    assert.deepEqual(preserved.commandsRun, ["first proof"]);
+    assert.throws(() =>
+      run("node", [
+        join(summaryTarget.target, ".codex", "that-git-life", "scripts", "tgl-run-summary.mjs"),
+        "--root",
+        summaryTarget.target,
+        "--successful-proof-count",
+        "one",
+      ]),
+    );
+
+    const globalLauncher = buildGlobalLauncherFixture();
+    retained.push(globalLauncher.target);
+    assert.equal(globalLauncher.build.installMode, "global-launcher");
+    const globalValidation = runJson("node", [
+      join(ROOT, "scripts", "validate-codex-adapter.mjs"),
+      "--root",
+      globalLauncher.target,
+      "--global-launcher",
+    ]);
+    assert.equal(globalValidation.ok, true);
+    const canonical = readFileSync(join(globalLauncher.target, "skills", "that-git-life", "SKILL.md"), "utf8");
+    const alias = readFileSync(join(globalLauncher.target, "skills", "the-git-life", "SKILL.md"), "utf8");
+    assert.match(canonical, /THAT_GIT_LIFE_SOURCE/);
+    assert.match(alias, /alias for `\$that-git-life`/);
+    assert.doesNotMatch(`${canonical}\n${alias}`, /\/Users\//);
 
     console.log(JSON.stringify({ ok: true, fixtures: retained.length }, null, 2));
   } finally {

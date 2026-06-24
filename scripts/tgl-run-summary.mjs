@@ -27,7 +27,10 @@ function values(value) {
 function parseCount(value) {
   if (value === undefined) return undefined;
   const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new Error(`Invalid count: ${value}`);
+  }
+  return parsed;
 }
 
 function readJson(path, fallback) {

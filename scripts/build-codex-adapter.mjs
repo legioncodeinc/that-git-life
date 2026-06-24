@@ -81,16 +81,19 @@ const RUNTIME_SCRIPTS = [
   "tgl-doctor.mjs",
 ];
 
-const INSTALL_MODES = ["committed-project", "local-only", "ci-safe"];
+const INSTALL_MODES = ["committed-project", "local-only", "ci-safe", "global-launcher"];
+const LOCAL_ONLY_EXCLUDE_MARKER = "# That Git Life local-only Codex adapter";
+const LOCAL_ONLY_EXCLUDE_LINES = [LOCAL_ONLY_EXCLUDE_MARKER, ".agents/", ".codex/", "AGENTS.that-git-life.md"];
 
 function usage() {
   console.log(`Usage:
-  node scripts/build-codex-adapter.mjs --out <target-project> [--profile core|autopilot|all] [--agents-mode auto|fragment|merge|both] [--install-mode committed-project|local-only|ci-safe] [--merge-agents] [--with-research] [--clean]
+  node scripts/build-codex-adapter.mjs --out <target-project-or-codex-home> [--profile core|autopilot|all] [--agents-mode auto|fragment|merge|both] [--install-mode committed-project|local-only|ci-safe|global-launcher] [--source-root <that-git-life-source>] [--merge-agents] [--with-research] [--clean]
 
 Examples:
   node scripts/build-codex-adapter.mjs --out /tmp/tgl-codex-smoke --profile core --agents-mode both --clean
   node scripts/build-codex-adapter.mjs --out /path/to/repo --profile autopilot --agents-mode both
   node scripts/build-codex-adapter.mjs --out /path/to/repo --profile autopilot --install-mode local-only
+  node scripts/build-codex-adapter.mjs --out "$CODEX_HOME" --install-mode global-launcher
   node scripts/build-codex-adapter.mjs --out /path/to/repo --profile all
 `);
 }
@@ -101,6 +104,7 @@ function parseArgs(argv) {
     profile: "core",
     agentsMode: "",
     installMode: "committed-project",
+    sourceRoot: "",
     mergeAgents: false,
     withResearch: false,
     clean: false,
@@ -128,6 +132,10 @@ function parseArgs(argv) {
       args.installMode = argv[++i] ?? "";
       continue;
     }
+    if (arg === "--source-root") {
+      args.sourceRoot = argv[++i] ?? "";
+      continue;
+    }
     if (arg === "--merge-agents") {
       args.mergeAgents = true;
       continue;
@@ -146,7 +154,7 @@ function parseArgs(argv) {
   if (!args.out) throw new Error("Missing required --out <target-project>");
   if (!["core", "autopilot", "all"].includes(args.profile)) throw new Error("--profile must be core, autopilot, or all");
   if (!INSTALL_MODES.includes(args.installMode)) {
-    throw new Error("--install-mode must be committed-project, local-only, or ci-safe");
+    throw new Error("--install-mode must be committed-project, local-only, ci-safe, or global-launcher");
   }
   if (!args.agentsMode) args.agentsMode = args.mergeAgents ? "both" : "auto";
   if (!["auto", "fragment", "merge", "both"].includes(args.agentsMode)) {
@@ -259,6 +267,144 @@ function writeOpenAiYaml(skillTarget, meta, implicit) {
       "",
     ].join("\n"),
   );
+}
+
+function globalLauncherMarkdown(name, options = {}) {
+  const isAlias = name !== "that-git-life";
+  const sourceRoot = options.sourceRoot || "";
+  return `---
+name: ${name}
+description: ${isAlias ? "Alias launcher for That Git Life in Codex." : "Global launcher for That Git Life in Codex. Use when the user invokes $that-git-life or asks That Git Life to take work from request through planning, implementation, verification, PR, and closeout."}
+---
+
+# That Git Life Global Launcher
+
+${isAlias ? "This is an alias for `$that-git-life`. Follow the same launcher flow below." : "This is the user-level Codex entry point for That Git Life."}
+
+It is not the full runtime. The full runtime is project-local and lives in:
+
+\`\`\`text
+.agents/skills/that-git-life/SKILL.md
+.codex/agents/
+.codex/hooks.json
+.codex/that-git-life/scripts/
+AGENTS.that-git-life.md
+\`\`\`
+
+Your job is to make sure the current project has that local adapter, then follow the project-local router.
+
+## Source Repo Resolution
+
+Resolve the That Git Life source checkout in this order:
+
+1. Use \`THAT_GIT_LIFE_SOURCE\` when it is set.
+2. Use this launcher install's embedded source root when present.
+3. Use the current git repo only when it contains \`scripts/build-codex-adapter.mjs\`.
+
+Embedded source root:
+
+\`\`\`text
+${sourceRoot}
+\`\`\`
+
+If no source checkout can be resolved, stop and ask the user to set \`THAT_GIT_LIFE_SOURCE\` to a That Git Life checkout containing \`scripts/build-codex-adapter.mjs\`, or reinstall the global launcher with \`--source-root <path>\`.
+
+## Startup
+
+1. Resolve the current project root:
+
+\`\`\`bash
+git rev-parse --show-toplevel 2>/dev/null || pwd
+\`\`\`
+
+2. Check whether the project-local router exists:
+
+\`\`\`text
+<project-root>/.agents/skills/that-git-life/SKILL.md
+\`\`\`
+
+3. If it is missing, install the adapter with the \`autopilot\` profile:
+
+\`\`\`bash
+node "<source>/scripts/build-codex-adapter.mjs" \\
+  --out "<project-root>" \\
+  --profile autopilot \\
+  --agents-mode both \\
+  --clean
+\`\`\`
+
+Use \`--agents-mode fragment\` only when the user explicitly asks to inspect generated instructions before touching \`AGENTS.md\`.
+
+4. Validate the install:
+
+\`\`\`bash
+node "<source>/scripts/validate-codex-adapter.mjs" --root "<project-root>"
+\`\`\`
+
+If validation fails, fix the install or report the exact blocker.
+
+5. Read the project-local router completely:
+
+\`\`\`text
+<project-root>/.agents/skills/that-git-life/SKILL.md
+\`\`\`
+
+Then follow it for the requested work.
+
+## Operating Posture
+
+- Treat the project-local router as the source of truth after installation.
+- Inspect the repo before planning or editing.
+- Bootstrap \`library/\` if missing.
+- Create backwards PRDs for existing undocumented behavior when the router recommends it.
+- Create or locate the governing PRD, IRD, or ADR before substantive implementation.
+- Generate and maintain \`EXECUTION_LEDGER.md\` for non-trivial work.
+- Work on a branch unless the user explicitly asks for direct-main work.
+- Run security before quality.
+- Open a PR for implementation work unless the user explicitly asks for local-only work.
+- Do not merge unless the user explicitly authorizes merge-through and the checks are green.
+
+## Important Boundaries
+
+- Do not treat this global skill as proof that the project is installed. Always check for the project-local adapter.
+- Do not copy all That Git Life skills globally. The global layer should stay a launcher.
+- Preserve unrelated dirty work.
+- If the user asked for planning-only, create the durable plan and stop before implementation.
+`;
+}
+
+function writeGlobalLauncher(targetRoot, args) {
+  const launcherNames = ["that-git-life", "the-git-life"];
+  for (const name of launcherNames) {
+    const skillRoot = join(targetRoot, "skills", name);
+    if (args.clean && existsSync(skillRoot)) rmSync(skillRoot, { recursive: true, force: true });
+    ensureDir(skillRoot);
+    writeFileSync(join(skillRoot, "SKILL.md"), globalLauncherMarkdown(name, { sourceRoot: args.sourceRoot }));
+    writeOpenAiYaml(
+      skillRoot,
+      {
+        name,
+        description: name === "that-git-life" ? "Global That Git Life launcher for Codex." : "Alias for the global That Git Life launcher.",
+      },
+      true,
+    );
+  }
+
+  const manifest = {
+    adapter: "that-git-life-codex",
+    installMode: "global-launcher",
+    sourceCommit: sourceCommit(),
+    generatedAt: new Date().toISOString(),
+    canonicalSkill: "that-git-life",
+    aliases: ["the-git-life"],
+    embeddedSourceRoot: args.sourceRoot || "",
+    targetRelativePaths: {
+      canonicalSkill: "skills/that-git-life/SKILL.md",
+      aliasSkill: "skills/the-git-life/SKILL.md",
+    },
+  };
+  writeFileSync(join(targetRoot, "skills", "that-git-life", "global-launcher.json"), JSON.stringify(manifest, null, 2) + "\n");
+  return manifest;
 }
 
 function writeRouterSkill(targetRoot, profile) {
@@ -627,6 +773,7 @@ function writeRuntimeScripts(targetRoot) {
 
 function writeRunSummaryTemplate(targetRoot) {
   const summaryPath = join(targetRoot, ".codex", "that-git-life", "run-summary.json");
+  if (existsSync(summaryPath)) return false;
   ensureDir(dirname(summaryPath));
   writeFileSync(
     summaryPath,
@@ -663,6 +810,7 @@ function writeRunSummaryTemplate(targetRoot) {
       2,
     ) + "\n",
   );
+  return true;
 }
 
 function appendLocalOnlyGitExclude(targetRoot) {
@@ -670,15 +818,21 @@ function appendLocalOnlyGitExclude(targetRoot) {
   if (!existsSync(gitDir)) return false;
   const excludePath = join(gitDir, "info", "exclude");
   ensureDir(dirname(excludePath));
-  const block = [
-    "# That Git Life local-only Codex adapter",
-    ".agents/",
-    ".codex/",
-    "AGENTS.that-git-life.md",
-  ].join("\n");
+  const block = LOCAL_ONLY_EXCLUDE_LINES.join("\n");
   const existing = existsSync(excludePath) ? readFileSync(excludePath, "utf8") : "";
-  if (existing.includes("# That Git Life local-only Codex adapter")) return true;
+  if (existing.includes(LOCAL_ONLY_EXCLUDE_MARKER)) return true;
   writeFileSync(excludePath, `${existing.trimEnd()}\n${block}\n`);
+  return true;
+}
+
+function removeLocalOnlyGitExclude(targetRoot) {
+  const excludePath = join(targetRoot, ".git", "info", "exclude");
+  if (!existsSync(excludePath)) return false;
+  const existing = readFileSync(excludePath, "utf8");
+  if (!existing.includes(LOCAL_ONLY_EXCLUDE_MARKER)) return false;
+  const blockPattern = new RegExp(`\\n?${LOCAL_ONLY_EXCLUDE_LINES.map((line) => line.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("\\n")}\\n?`, "g");
+  const next = existing.replace(blockPattern, "\n").replace(/\n{3,}/g, "\n\n");
+  writeFileSync(excludePath, next.endsWith("\n") ? next : `${next}\n`);
   return true;
 }
 
@@ -694,6 +848,25 @@ function main() {
   const args = parseArgs(process.argv.slice(2));
   const targetRoot = args.out;
   ensureDir(targetRoot);
+
+  if (args.installMode === "global-launcher") {
+    const manifest = writeGlobalLauncher(targetRoot, args);
+    console.log(
+      JSON.stringify(
+        {
+          ok: true,
+          out: targetRoot,
+          installMode: args.installMode,
+          canonicalSkill: manifest.canonicalSkill,
+          aliases: manifest.aliases,
+          manifest: relative(process.cwd(), join(targetRoot, "skills", "that-git-life", "global-launcher.json")),
+        },
+        null,
+        2,
+      ),
+    );
+    return;
+  }
 
   if (args.clean) {
     for (const rel of [".agents/skills", ".codex/agents", ".codex/hooks", ".codex/hooks.json", ".codex/that-git-life"]) {
@@ -739,6 +912,7 @@ function main() {
   writeRunSummaryTemplate(targetRoot);
   const guidance = writeAgentsGuidance(targetRoot, args.agentsMode);
   const localGitExclude = args.installMode === "local-only" ? appendLocalOnlyGitExclude(targetRoot) : false;
+  const removedLocalGitExclude = args.installMode === "local-only" ? false : removeLocalOnlyGitExclude(targetRoot);
 
   const manifest = {
     adapter: "that-git-life-codex",
@@ -749,6 +923,7 @@ function main() {
     withResearch: args.withResearch,
     hooks: writesHooks,
     localGitExclude,
+    removedLocalGitExclude,
     sourceCommit: sourceCommit(),
     generatedAt: new Date().toISOString(),
     skills: copiedSkills.length,
