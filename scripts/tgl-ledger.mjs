@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import { jsonOut, listFilesRecursive, parseArgs, rel } from "./tgl-utils.mjs";
+import { jsonOut, listFilesRecursive, parseArgs, rel, resolveInsideRoot } from "./tgl-utils.mjs";
 
 function usage() {
   console.log("Usage: node scripts/tgl-ledger.mjs --root <repo> [--from <prd-or-ird-file-or-dir>] [--out EXECUTION_LEDGER.md]");
@@ -35,7 +35,7 @@ if (args.help) {
   process.exit(0);
 }
 
-const source = args.from ? join(args.root, args.from) : join(args.root, "library");
+const source = args.from ? resolveInsideRoot(args.root, args.from, "--from") : join(args.root, "library");
 const files = markdownFiles(source);
 const criteria = files.flatMap((file) => extractCriteria(file, args.root));
 const out = join(args.root, args.out || "EXECUTION_LEDGER.md");

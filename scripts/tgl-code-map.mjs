@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { extname, join } from "node:path";
-import { jsonOut, listFilesRecursive, parseArgs, rel } from "./tgl-utils.mjs";
+import { jsonOut, listFilesRecursive, parseArgs, rel, resolveInsideRoot } from "./tgl-utils.mjs";
 
 function usage() {
   console.log("Usage: node scripts/tgl-code-map.mjs --root <repo> [--scope <path>] [--out CODE_MAP.md] [--max-files 150] [--include-summaries]");
@@ -15,7 +15,7 @@ if (args.help) {
 
 const root = args.root;
 const scope = args.scope || ".";
-const base = join(root, scope);
+const base = resolveInsideRoot(root, scope, "--scope");
 const maxFiles = Number.parseInt(args["max-files"] || "150", 10);
 const limit = Number.isFinite(maxFiles) && maxFiles > 0 ? maxFiles : 150;
 const ignored = new Set([".git", "node_modules", ".agents", ".codex", "library", "dist", "build", ".next", "coverage"]);

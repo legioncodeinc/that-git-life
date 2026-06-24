@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
-import { basename, dirname, join, relative, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { execFileSync } from "node:child_process";
 
 export function parseArgs(argv, spec = {}) {
@@ -16,11 +16,25 @@ export function parseArgs(argv, spec = {}) {
     if (type === "boolean") {
       args[key] = true;
     } else {
-      args[key] = argv[++i] ?? "";
+      const value = argv[i + 1];
+      if (value == null || value.startsWith("--")) {
+        throw new Error(`Missing value for --${key}`);
+      }
+      args[key] = value;
+      i += 1;
     }
   }
   args.root = resolve(args.root);
   return args;
+}
+
+export function resolveInsideRoot(root, input, label) {
+  const target = resolve(root, input || ".");
+  const relativePath = relative(resolve(root), target);
+  if (relativePath && (relativePath.startsWith("..") || isAbsolute(relativePath))) {
+    throw new Error(`${label} must stay within --root: ${input}`);
+  }
+  return target;
 }
 
 export function ensureDir(path) {
@@ -157,7 +171,7 @@ export function replaceStatusLine(markdown, status) {
 }
 
 export function rel(root, path) {
-  return relative(root, path) || ".";
+  return (relative(root, path) || ".").replace(/\\/g, "/");
 }
 
 export function jsonOut(value) {

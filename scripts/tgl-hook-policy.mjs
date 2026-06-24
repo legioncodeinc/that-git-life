@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { git, jsonOut, listDirs, parseArgs } from "./tgl-utils.mjs";
 
 const args = parseArgs(process.argv.slice(2));
@@ -15,10 +15,10 @@ const hasLibrary = existsSync(join(args.root, "library"));
 const hasLedger = existsSync(join(args.root, "EXECUTION_LEDGER.md"));
 const hasOpenLedger = hasLedger && /\|\s*(OPEN|IN_PROGRESS|DONE)\s*\|/.test(readFileSync(join(args.root, "EXECUTION_LEDGER.md"), "utf8"));
 const prdCount = ["backlog", "in-work", "completed"]
-  .map((state) => listDirs(join(args.root, "library", "requirements", state)).filter((p) => /\/prd-\d+-/.test(p)).length)
+  .map((state) => listDirs(join(args.root, "library", "requirements", state)).filter((p) => /^prd-\d+-/.test(basename(p))).length)
   .reduce((a, b) => a + b, 0);
 const irdCount = ["backlog", "in-work", "completed"]
-  .map((state) => listDirs(join(args.root, "library", "issues", state)).filter((p) => /\/ird-\d+-/.test(p)).length)
+  .map((state) => listDirs(join(args.root, "library", "issues", state)).filter((p) => /^ird-\d+-/.test(basename(p))).length)
   .reduce((a, b) => a + b, 0);
 
 if ((branch === "main" || branch === "master") && codeChanged) {

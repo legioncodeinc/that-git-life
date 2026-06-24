@@ -90,20 +90,20 @@ function codeCandidates(files) {
 }
 
 function countDirs(base, pattern) {
-  return listDirs(base).filter((p) => pattern.test(p)).length;
+  return listDirs(base).filter((p) => pattern.test(basename(p))).length;
 }
 
 const repoFiles = filteredRepoFiles(args.root);
 const code = codeCandidates(repoFiles);
 const prdCounts = {
-  backlog: countDirs(join(req, "backlog"), /\/prd-\d+-/),
-  inWork: countDirs(join(req, "in-work"), /\/prd-\d+-/),
-  completed: countDirs(join(req, "completed"), /\/prd-\d+-/),
+  backlog: countDirs(join(req, "backlog"), /^prd-\d+-/),
+  inWork: countDirs(join(req, "in-work"), /^prd-\d+-/),
+  completed: countDirs(join(req, "completed"), /^prd-\d+-/),
 };
 const irdCounts = {
-  backlog: countDirs(join(issues, "backlog"), /\/ird-\d+-/),
-  inWork: countDirs(join(issues, "in-work"), /\/ird-\d+-/),
-  completed: countDirs(join(issues, "completed"), /\/ird-\d+-/),
+  backlog: countDirs(join(issues, "backlog"), /^ird-\d+-/),
+  inWork: countDirs(join(issues, "in-work"), /^ird-\d+-/),
+  completed: countDirs(join(issues, "completed"), /^ird-\d+-/),
 };
 const totalPrds = prdCounts.backlog + prdCounts.inWork + prdCounts.completed;
 const libraryExists = existsSync(join(args.root, "library"));

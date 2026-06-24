@@ -24,13 +24,13 @@ const block = [
   "## Ship Links",
   "",
   `- PR: ${args["pr-url"]}`,
-  args["merge-sha"] ? `- Merge SHA: \`${args["merge-sha"]}\`` : "",
+  ...(args["merge-sha"] ? [`- Merge SHA: \`${args["merge-sha"]}\``] : []),
   `- Linked: ${new Date().toISOString()}`,
   "",
-].filter(Boolean).join("\n");
+].join("\n");
 
 if (/## Ship Links/.test(text)) {
-  text = text.replace(/## Ship Links[\s\S]*?(?=\n---|\n## |\n?$)/, block);
+  text = text.replace(/## Ship Links[\s\S]*?(?=\n---|\n## |\n?$)/, () => block);
 } else {
   text = `${text.trim()}\n\n---\n\n${block}\n`;
 }

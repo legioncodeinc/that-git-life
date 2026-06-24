@@ -16,7 +16,7 @@ The single source of truth for how documentation is written in this repository. 
 | **QA Report (standalone)** | Audit not tied to a single plan | `library/requirements/reports/<date>-<type>-report.md` | Team lead, audit reviewer |
 | **Architecture Decision Record** | Durable architecture decision | `library/knowledge/private/architecture/ADR-<n>-<title>.md` | Senior engineers, architects |
 | **Private Knowledge Doc** | Internal architecture, API, integration, design, or runbook documentation | `library/knowledge/private/<domain>/<title>.md` | Engineering team |
-| **Public Knowledge Doc** | Customer-facing overview, guide, or FAQ | `library/knowledge/public/<overview|guides|faqs>/<title>.md` | Users, customers, support |
+| **Public Knowledge Doc** | Customer-facing overview, guide, or FAQ | `library/knowledge/public/<overview\|guides\|faqs>/<title>.md` | Users, customers, support |
 | **Standards Doc** | Rules for writing documentation itself | `library/knowledge/private/standards/<title>.md` | All contributors |
 
 ---

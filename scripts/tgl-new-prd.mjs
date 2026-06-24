@@ -33,7 +33,7 @@ template = template
   .replaceAll("<###>", number)
   .replaceAll("<Module Title>", title)
   .replaceAll("<slug>", slug)
-  .replace("<!-- One paragraph: what this module does and why it exists. -->", args.summary || "<!-- One paragraph: what this module does and why it exists. -->");
+  .replace("<!-- One paragraph: what this module does and why it exists. -->", () => args.summary || "<!-- One paragraph: what this module does and why it exists. -->");
 
 writeIfMissing(index, template);
 writeIfMissing(join(dir, "qa", "README.md"), readTemplate(args.root, "qa-README.md", "# QA\n\nQuality reports for this PRD live here.\n"));
