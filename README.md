@@ -105,7 +105,7 @@ For Codex, the recommended product-building install is the `autopilot` profile:
 node scripts/build-codex-adapter.mjs --out /path/to/project --profile autopilot --agents-mode both
 ```
 
-That profile installs the PRD/IRD library workflow, backwards-PRD scaffolding for existing codebases, ADR writing, Thanos Gauntlet execution, security, quality, git, and implementation Stingers together so a developer can prompt Codex with: "Use That Git Life autopilot. Build <feature> and take it to merged PR."
+That profile installs the PRD/IRD library workflow, backwards-PRD scaffolding for existing codebases, ADR writing, Thanos Gauntlet execution, security, quality, git, and implementation Stingers together so a developer can prompt Codex with: "Use That Git Life autopilot. Build <feature> and take it to merged PR." After a merged PR, the Codex adapter closes the loop by moving shipped governing artifacts to `completed/` and updating ledger/summary references.
 
 ---
 
@@ -306,7 +306,7 @@ Use this when code already exists but no PRD was ever written for it. You are do
 3. **It assigns the next PRD number.** Same rule as a forward PRD: list every `prd-*` folder across `backlog/`, `in-work/`, and `completed/`, take the max and add one.
 4. **It writes the index, marked retroactive.** The header status is "Shipped" with a "Retroactive: Yes" note. The body captures the real APIs, data models, and the key decisions that would otherwise be lost.
 5. **It cross-links.** Related knowledge docs, ADRs, and any issues the scan surfaced get linked in.
-6. **It files by lifecycle.** A backwards-PRD is created in `backlog/`. If the code is fully shipped and verified, the agent moves the whole folder straight to `completed/`.
+6. **It files by lifecycle.** A backwards-PRD is created in `backlog/` only when it captures unfinished or unverified follow-up work. If the code is already fully shipped and verified, the agent creates or moves the whole folder straight to `completed/`.
 
 Repeat module by module until your shipped code has a paper trail that matches reality.
 

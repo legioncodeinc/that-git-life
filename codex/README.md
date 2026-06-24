@@ -118,7 +118,7 @@ The generated `that-git-life` skill then drives this state machine:
 1. Inspect the repo with `tgl-inspect-project.mjs`.
 2. Discover real repo routes, files, scripts, package commands, CI, and docs before turning examples into plans.
 3. Bootstrap `library/` with `tgl-bootstrap-library.mjs` if missing.
-4. If existing code is present and no PRDs exist, create a retroactive PRD with `tgl-backwards-prd.mjs` before planning new work.
+4. If existing code is present and no PRDs exist, create a retroactive PRD with `tgl-backwards-prd.mjs --lifecycle completed` before planning new work when documenting already-shipped baseline behavior. Use backlog only for unfinished or unverified follow-up work.
 5. Classify the request as feature/product work, bug/incident work, architecture decision, existing PRD/IRD execution, or tiny edit.
 6. Create missing PRD, IRD, or ADR skeletons with `tgl-new-prd.mjs`, `tgl-new-ird.mjs`, or `tgl-new-adr.mjs`.
 7. Fill the planning docs with `library-stinger` or `adr-writing-stinger` until acceptance criteria are binary and testable.
@@ -131,6 +131,7 @@ The generated `that-git-life` skill then drives this state machine:
 14. Commit, push, open a PR, watch CI, fix failures, and merge when authorized.
 15. Link the merged PR to the governing artifact with `tgl-link-pr.mjs`.
 16. Write `.codex/that-git-life/run-summary.json` with `tgl-run-summary.mjs`, then move the artifact to `completed` with `tgl-complete-work.mjs`.
+17. After the move, rerun or inspect the run summary and ledger. `EXECUTION_LEDGER.md` and `.codex/that-git-life/run-summary.json` should reference the completed artifact path, and no shipped governing PRD/IRD should remain under `in-work/` or ordinary backlog.
 
 PRDs, IRDs, ADRs, code maps, and ledgers are working artifacts. They are stopping points only when the user explicitly requested planning-only.
 

@@ -29,4 +29,38 @@ if (existsSync(index)) {
   writeFileSync(index, replaceStatusLine(readFileSync(index, "utf8"), "Shipped"));
 }
 
-jsonOut({ ok: true, from: args.artifact, to: toRel, index: rel(args.root, index) });
+let ledgerUpdated = false;
+const ledger = join(args.root, "EXECUTION_LEDGER.md");
+if (existsSync(ledger)) {
+  const before = readFileSync(ledger, "utf8");
+  const after = before.split(args.artifact).join(toRel);
+  if (after !== before) {
+    writeFileSync(ledger, after);
+    ledgerUpdated = true;
+  }
+}
+
+let runSummaryUpdated = false;
+const summaryPath = join(args.root, ".codex", "that-git-life", "run-summary.json");
+if (existsSync(summaryPath)) {
+  try {
+    const summary = JSON.parse(readFileSync(summaryPath, "utf8"));
+    if (summary.governingArtifactPath === args.artifact) {
+      summary.governingArtifactPath = toRel;
+      summary.generatedAt = new Date().toISOString();
+      writeFileSync(summaryPath, `${JSON.stringify(summary, null, 2)}\n`);
+      runSummaryUpdated = true;
+    }
+  } catch {
+    // Leave malformed summaries untouched; validation will report the issue.
+  }
+}
+
+jsonOut({
+  ok: true,
+  from: args.artifact,
+  to: toRel,
+  index: rel(args.root, index),
+  ledgerUpdated,
+  runSummaryUpdated,
+});

@@ -448,7 +448,7 @@ Prompt examples, route examples, and user-supplied path guesses are candidate in
 ## Request classification
 
 - New product, module, or feature: create a PRD with \`tgl-new-prd.mjs\`, then fill it using \`library-stinger\`.
-- Existing repo with code but no PRD history: create one or more backwards PRDs with \`tgl-backwards-prd.mjs\`, then fill them using \`library-stinger/guides/05-backwards-prd.md\` before planning new work.
+- Existing repo with code but no PRD history: create one or more backwards PRDs with \`tgl-backwards-prd.mjs\`, then fill them using \`library-stinger/guides/05-backwards-prd.md\` before planning new work. When the backwards PRD documents behavior that is already shipped and verified, create it with \`--lifecycle completed\` or immediately move it with \`tgl-complete-work.mjs\`; do not leave shipped baseline documentation as ordinary backlog work.
 - Bug, regression, or incident with a GitHub issue number: create an IRD with \`tgl-new-ird.mjs\`, then fill it using \`library-stinger\`.
 - Bug without a GitHub issue number: create a tightly scoped PRD unless the user wants you to create a GitHub issue first.
 - Durable architecture decision: create an ADR with \`tgl-new-adr.mjs\`, then fill it using \`adr-writing-stinger\`.
@@ -464,7 +464,7 @@ Required sequence: repo inspection -> library bootstrap -> backwards PRD when ne
 1. Inspect the repo with \`tgl-inspect-project.mjs\`, then confirm real routes, files, scripts, framework conventions, package commands, CI, and docs with direct repo searches.
 2. Read \`../beekeeper-suit/SKILL.md\` when routing is needed.
 3. Bootstrap \`library/\` if missing.
-4. If \`tgl-inspect-project.mjs\` reports \`recommendations.backwardsPrdFirst: true\`, create a retroactive PRD with \`tgl-backwards-prd.mjs\` before planning new work. Then fill it by reading the current code through \`library-stinger/guides/05-backwards-prd.md\`.
+4. If \`tgl-inspect-project.mjs\` reports \`recommendations.backwardsPrdFirst: true\`, create a retroactive PRD with \`tgl-backwards-prd.mjs --lifecycle completed\` before planning new work when it documents already-shipped baseline behavior. Then fill it by reading the current code through \`library-stinger/guides/05-backwards-prd.md\`. Use backlog only when the backwards PRD intentionally captures unfinished or unverified follow-up work.
 5. Create or locate the governing forward PRD, IRD, and ADRs for the requested change.
 6. For existing code or backwards PRDs, generate \`CODE_MAP.md\` with \`tgl-code-map.mjs\` and use it as the starting evidence map. The command prints a compact JSON summary by default; pass \`--include-summaries\` only when you need every file summary in stdout.
 7. Fill planning docs until acceptance criteria are binary and testable.
@@ -497,13 +497,19 @@ node .codex/that-git-life/scripts/tgl-ship-preflight.mjs --root .
 
 15. Commit scoped changes, push the branch, open a PR, watch checks, fix failures, and merge when green if the user authorized merge-through.
 16. Link the PR back to the governing artifact with \`tgl-link-pr.mjs\`.
-17. Write or update the closeout summary:
+17. Write or update the closeout summary before and after merge:
 
 \`\`\`bash
 node .codex/that-git-life/scripts/tgl-run-summary.mjs --root . --governing-artifact <path> --ledger EXECUTION_LEDGER.md
 \`\`\`
 
-18. Move completed PRD or IRD folders from \`in-work\` to \`completed\` with \`tgl-complete-work.mjs\` when the PR is merged.
+18. When the PR is merged, move the governing PRD or IRD folder from \`in-work\` to \`completed\` with \`tgl-complete-work.mjs\`. This is mandatory closeout for merged work, not optional bookkeeping:
+
+\`\`\`bash
+node .codex/that-git-life/scripts/tgl-complete-work.mjs --root . --artifact <path-to-in-work-prd-or-ird-folder>
+\`\`\`
+
+19. After completion, rerun \`tgl-run-summary.mjs\` with the completed artifact path, verify \`EXECUTION_LEDGER.md\` no longer references the old \`in-work\` path, and confirm no shipped or fully verified governing artifact remains under \`library/requirements/in-work\`, \`library/issues/in-work\`, or ordinary backlog.
 
 ## Codex surface rules
 

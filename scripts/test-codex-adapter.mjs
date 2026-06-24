@@ -67,6 +67,9 @@ function assertRouterWording(target) {
   assert.match(router, /discover the real repo inventory/);
   assert.match(router, /Plans, PRDs, IRDs, ADRs, code maps, and ledgers are working artifacts/);
   assert.match(router, /repo inspection.*library bootstrap.*backwards PRD.*governing PRD\/IRD\/ADR.*EXECUTION_LEDGER\.md.*branch.*implementation.*verification.*PR.*checks.*authorized merge/is);
+  assert.match(router, /--lifecycle completed/);
+  assert.match(router, /mandatory closeout for merged work/);
+  assert.match(router, /verify `EXECUTION_LEDGER\.md` no longer references the old `in-work` path/);
 }
 
 function main() {
@@ -184,6 +187,54 @@ function main() {
         "one",
       ]),
     );
+
+    const closeoutTarget = buildFixture("committed-project");
+    retained.push(closeoutTarget.target);
+    runJson("node", [join(closeoutTarget.target, ".codex", "that-git-life", "scripts", "tgl-bootstrap-library.mjs"), "--root", closeoutTarget.target]);
+    const closeoutPrd = runJson("node", [
+      join(closeoutTarget.target, ".codex", "that-git-life", "scripts", "tgl-new-prd.mjs"),
+      "--root",
+      closeoutTarget.target,
+      "--title",
+      "Closeout path rewrite",
+    ]);
+    const closeoutStart = runJson("node", [
+      join(closeoutTarget.target, ".codex", "that-git-life", "scripts", "tgl-start-work.mjs"),
+      "--root",
+      closeoutTarget.target,
+      "--artifact",
+      closeoutPrd.dir,
+    ]);
+    runJson("node", [
+      join(closeoutTarget.target, ".codex", "that-git-life", "scripts", "tgl-ledger.mjs"),
+      "--root",
+      closeoutTarget.target,
+      "--from",
+      closeoutStart.to,
+    ]);
+    runJson("node", [
+      join(closeoutTarget.target, ".codex", "that-git-life", "scripts", "tgl-run-summary.mjs"),
+      "--root",
+      closeoutTarget.target,
+      "--governing-artifact",
+      closeoutStart.to,
+      "--ledger",
+      "EXECUTION_LEDGER.md",
+    ]);
+    const complete = runJson("node", [
+      join(closeoutTarget.target, ".codex", "that-git-life", "scripts", "tgl-complete-work.mjs"),
+      "--root",
+      closeoutTarget.target,
+      "--artifact",
+      closeoutStart.to,
+    ]);
+    assert.equal(complete.ledgerUpdated, true);
+    assert.equal(complete.runSummaryUpdated, true);
+    assert.match(complete.to, /library\/requirements\/completed\/prd-/);
+    assert.doesNotMatch(readFileSync(join(closeoutTarget.target, "EXECUTION_LEDGER.md"), "utf8"), /library\/requirements\/in-work\//);
+    assert.match(readFileSync(join(closeoutTarget.target, "EXECUTION_LEDGER.md"), "utf8"), /library\/requirements\/completed\//);
+    const completedSummary = JSON.parse(readFileSync(join(closeoutTarget.target, ".codex", "that-git-life", "run-summary.json"), "utf8"));
+    assert.equal(completedSummary.governingArtifactPath, complete.to);
 
     const globalLauncher = buildGlobalLauncherFixture();
     retained.push(globalLauncher.target);

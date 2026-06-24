@@ -219,6 +219,13 @@ function main() {
       "--known-limit",
       "Disposable smoke repo has no remote PR.",
     ]);
+    const complete = runJson("node", [
+      join(target, ".codex", "that-git-life", "scripts", "tgl-complete-work.mjs"),
+      "--root",
+      target,
+      "--artifact",
+      start.to,
+    ]);
 
     run("git", ["add", "."], { cwd: target });
     const diffCheck = run("git", ["diff", "--cached", "--check"], { cwd: target });
@@ -270,6 +277,11 @@ function main() {
             path: runSummary.path,
             commands: runSummary.summary?.commandsRun?.length || 0,
             proofs: runSummary.summary?.successfulProofCounts?.total || 0,
+          },
+          complete: {
+            to: complete.to,
+            ledgerUpdated: complete.ledgerUpdated,
+            runSummaryUpdated: complete.runSummaryUpdated,
           },
           tests: tests.split("\n").slice(-2),
           diffCheck: diffCheck || "clean",
