@@ -87,7 +87,7 @@ const LOCAL_ONLY_EXCLUDE_LINES = [LOCAL_ONLY_EXCLUDE_MARKER, ".agents/", ".codex
 
 function usage() {
   console.log(`Usage:
-  node scripts/build-codex-adapter.mjs --out <target-project-or-codex-home> [--profile core|autopilot|all] [--agents-mode auto|fragment|merge|both] [--install-mode committed-project|local-only|ci-safe|global-launcher] [--source-root <that-git-life-source>] [--merge-agents] [--with-research] [--clean]
+  node scripts/build-codex-adapter.mjs --out <target-project-or-codex-home> [--profile core|autopilot|all] [--agents-mode auto|fragment|merge|both] [--install-mode committed-project|local-only|ci-safe|global-launcher] [--source-root <that-git-life-source>] [--merge-agents] [--with-research] [--with-hooks] [--clean]
 
 Examples:
   node scripts/build-codex-adapter.mjs --out /tmp/tgl-codex-smoke --profile core --agents-mode both --clean
@@ -107,6 +107,7 @@ function parseArgs(argv) {
     sourceRoot: "",
     mergeAgents: false,
     withResearch: false,
+    withHooks: false,
     clean: false,
   };
 
@@ -142,6 +143,10 @@ function parseArgs(argv) {
     }
     if (arg === "--with-research") {
       args.withResearch = true;
+      continue;
+    }
+    if (arg === "--with-hooks") {
+      args.withHooks = true;
       continue;
     }
     if (arg === "--clean") {
@@ -269,24 +274,22 @@ function writeOpenAiYaml(skillTarget, meta, implicit) {
   );
 }
 
-function globalLauncherMarkdown(name, options = {}) {
-  const isAlias = name !== "that-git-life";
+function globalLauncherMarkdown(options = {}) {
   const sourceRoot = options.sourceRoot || "";
   return `---
-name: ${name}
-description: ${isAlias ? "Alias launcher for That Git Life in Codex." : "Global launcher for That Git Life in Codex. Use when the user invokes $that-git-life or asks That Git Life to take work from request through planning, implementation, verification, PR, and closeout."}
+name: that-git-life
+description: Global launcher for That Git Life in Codex. Use when the user invokes $that-git-life or asks That Git Life to take work from request through planning, implementation, verification, PR, and closeout.
 ---
 
 # That Git Life Global Launcher
 
-${isAlias ? "This is an alias for `$that-git-life`. Follow the same launcher flow below." : "This is the user-level Codex entry point for That Git Life."}
+This is the user-level Codex entry point for That Git Life.
 
 It is not the full runtime. The full runtime is project-local and lives in:
 
 \`\`\`text
-.agents/skills/that-git-life/SKILL.md
+.codex/that-git-life/router.md
 .codex/agents/
-.codex/hooks.json
 .codex/that-git-life/scripts/
 AGENTS.that-git-life.md
 \`\`\`
@@ -320,7 +323,7 @@ git rev-parse --show-toplevel 2>/dev/null || pwd
 2. Check whether the project-local router exists:
 
 \`\`\`text
-<project-root>/.agents/skills/that-git-life/SKILL.md
+<project-root>/.codex/that-git-life/router.md
 \`\`\`
 
 3. If it is missing, install the adapter with the \`autopilot\` profile:
@@ -346,7 +349,7 @@ If validation fails, fix the install or report the exact blocker.
 5. Read the project-local router completely:
 
 \`\`\`text
-<project-root>/.agents/skills/that-git-life/SKILL.md
+<project-root>/.codex/that-git-life/router.md
 \`\`\`
 
 Then follow it for the requested work.
@@ -374,21 +377,19 @@ Then follow it for the requested work.
 }
 
 function writeGlobalLauncher(targetRoot, args) {
-  const launcherNames = ["that-git-life", "the-git-life"];
-  for (const name of launcherNames) {
-    const skillRoot = join(targetRoot, "skills", name);
-    if (args.clean && existsSync(skillRoot)) rmSync(skillRoot, { recursive: true, force: true });
-    ensureDir(skillRoot);
-    writeFileSync(join(skillRoot, "SKILL.md"), globalLauncherMarkdown(name, { sourceRoot: args.sourceRoot }));
-    writeOpenAiYaml(
-      skillRoot,
-      {
-        name,
-        description: name === "that-git-life" ? "Global That Git Life launcher for Codex." : "Alias for the global That Git Life launcher.",
-      },
-      true,
-    );
-  }
+  const skillRoot = join(targetRoot, "skills", "that-git-life");
+  if (args.clean && existsSync(skillRoot)) rmSync(skillRoot, { recursive: true, force: true });
+  rmSync(join(targetRoot, "skills", "the-git-life"), { recursive: true, force: true });
+  ensureDir(skillRoot);
+  writeFileSync(join(skillRoot, "SKILL.md"), globalLauncherMarkdown({ sourceRoot: args.sourceRoot }));
+  writeOpenAiYaml(
+    skillRoot,
+    {
+      name: "that-git-life",
+      description: "Global That Git Life launcher for Codex.",
+    },
+    true,
+  );
 
   const manifest = {
     adapter: "that-git-life-codex",
@@ -396,11 +397,10 @@ function writeGlobalLauncher(targetRoot, args) {
     sourceCommit: sourceCommit(),
     generatedAt: new Date().toISOString(),
     canonicalSkill: "that-git-life",
-    aliases: ["the-git-life"],
+    aliases: [],
     embeddedSourceRoot: args.sourceRoot || "",
     targetRelativePaths: {
       canonicalSkill: "skills/that-git-life/SKILL.md",
-      aliasSkill: "skills/the-git-life/SKILL.md",
     },
   };
   writeFileSync(join(targetRoot, "skills", "that-git-life", "global-launcher.json"), JSON.stringify(manifest, null, 2) + "\n");
@@ -408,22 +408,17 @@ function writeGlobalLauncher(targetRoot, args) {
 }
 
 function writeRouterSkill(targetRoot, profile) {
-  const skillRoot = join(targetRoot, ".agents", "skills", "that-git-life");
-  ensureDir(skillRoot);
+  const routerRoot = join(targetRoot, ".codex", "that-git-life");
+  ensureDir(routerRoot);
   const autopilotNote =
     profile === "core"
       ? "If the request needs PRDs, ADRs, or Gauntlet execution but the matching Stinger is not installed, tell the user to reinstall with `--profile autopilot` or `--profile all`."
       : "This install includes the autopilot workflow Stingers for library bootstrap, PRD/IRD/ADR creation, and Gauntlet execution.";
   writeFileSync(
-    join(skillRoot, "SKILL.md"),
-    `---
-name: that-git-life
-description: Autopilot router for That Git Life in Codex. Use when the user gives a task, bug, feature, product idea, PRD, IRD, ADR, or asks to take work from idea to merged PR. It inspects the repo, bootstraps library/ when missing, creates PRDs/IRDs/ADRs as needed, executes acceptance criteria through the Gauntlet, runs security before quality, and ships through PR when possible.
----
+    join(routerRoot, "router.md"),
+    `# That Git Life Project Router
 
-# That Git Life for Codex
-
-This is the Codex entry point for the That Git Life adapter.
+This is the project-local runtime router for the global \`$that-git-life\` skill. It is intentionally not a Codex skill, so project installs do not create a second visible \`$that-git-life\` entry.
 
 ${autopilotNote}
 
@@ -513,7 +508,8 @@ node .codex/that-git-life/scripts/tgl-complete-work.mjs --root . --artifact <pat
 
 ## Codex surface rules
 
-- In Codex, use \`AGENTS.md\`, \`.agents/skills\`, \`.codex/agents\`, \`.codex/hooks.json\`, and \`.codex/that-git-life/scripts\`.
+- In Codex, use \`AGENTS.md\`, \`.agents/skills\`, \`.codex/agents\`, and \`.codex/that-git-life/scripts\`.
+- Project installs do not register a second \`that-git-life\` skill. The only user-facing launcher should be the global \`$that-git-life\` skill, which reads this router internally.
 - Do not pretend Cursor or Claude-specific commands are active. Map them to Codex skills, Codex custom agents, and local scripts.
 - Custom Bee agents do not auto-spawn. Spawn them only when the task benefits from explicit subagents or parallel review.
 - If a required Stinger is missing, stop and recommend reinstalling the adapter with \`--profile autopilot\` or \`--profile all\`.
@@ -522,15 +518,6 @@ The default posture is autonomous: inspect, scaffold, document, execute, verify,
 `,
   );
 
-  writeOpenAiYaml(
-    skillRoot,
-    {
-      name: "that-git-life",
-      description:
-        "Autopilot That Git Life workflow for taking tasks, bugs, features, and PRDs from idea to merged PR.",
-    },
-    true,
-  );
 }
 
 function writeAgentToml(targetRoot, agentMeta) {
@@ -566,9 +553,10 @@ function readRulesBlock() {
     "## Codex Surfaces",
     "",
     "- Use `.agents/skills` for Stingers.",
-    "- The project-local That Git Life router is `.agents/skills/that-git-life/SKILL.md`; if automatic skill discovery points to a user-level path or does not find it, read that file explicitly.",
+    "- The only user-facing launcher should be the global `$that-git-life` skill.",
+    "- The project-local That Git Life router is `.codex/that-git-life/router.md`; read that file explicitly after the global launcher bootstraps or validates the project adapter.",
     "- Use `.codex/agents` for explicit Codex subagents.",
-    "- Use `.codex/hooks.json` for deterministic lifecycle checks.",
+    "- Project-local hooks are opt-in only; default adapter installs should not write `.codex/hooks.json`.",
     "- Cursor `.cursor/*` and Claude `.claude/*` files are source assets, not active Codex runtime files.",
     "",
   ];
@@ -765,6 +753,16 @@ writeFileSync(
   );
 }
 
+function removeHooks(targetRoot) {
+  for (const relPath of [".codex/hooks", ".codex/hooks.json"]) {
+    rmSync(join(targetRoot, relPath), { recursive: true, force: true });
+  }
+}
+
+function removeProjectLauncherSkill(targetRoot) {
+  rmSync(join(targetRoot, ".agents", "skills", "that-git-life"), { recursive: true, force: true });
+}
+
 function writeRuntimeScripts(targetRoot) {
   const scriptsDir = join(targetRoot, ".codex", "that-git-life", "scripts");
   ensureDir(scriptsDir);
@@ -864,7 +862,6 @@ function main() {
           out: targetRoot,
           installMode: args.installMode,
           canonicalSkill: manifest.canonicalSkill,
-          aliases: manifest.aliases,
           manifest: relative(process.cwd(), join(targetRoot, "skills", "that-git-life", "global-launcher.json")),
         },
         null,
@@ -886,6 +883,7 @@ function main() {
   const selectedAgents = args.profile === "autopilot" ? AUTOPILOT_AGENTS : CORE_AGENTS;
 
   const skillDirs = selectedSkills.filter((name) => name !== "that-git-life");
+  removeProjectLauncherSkill(targetRoot);
 
   const copiedSkills = [];
   for (const skillDir of skillDirs) {
@@ -899,7 +897,6 @@ function main() {
     copiedSkills.push(meta.name);
   }
   writeRouterSkill(targetRoot, args.profile);
-  copiedSkills.unshift("that-git-life");
 
   const agentFiles = readdirSync(join(ROOT, ".cursor", "agents"))
     .filter((entry) => entry.endsWith(".md"))
@@ -912,8 +909,9 @@ function main() {
     copiedAgents.push(meta.name);
   }
 
-  const writesHooks = args.installMode !== "ci-safe";
+  const writesHooks = args.withHooks && args.installMode !== "ci-safe";
   if (writesHooks) writeHooks(targetRoot);
+  else removeHooks(targetRoot);
   writeRuntimeScripts(targetRoot);
   writeRunSummaryTemplate(targetRoot);
   const guidance = writeAgentsGuidance(targetRoot, args.agentsMode);
@@ -927,6 +925,7 @@ function main() {
     agentsMode: guidance.mode,
     requestedAgentsMode: guidance.requestedMode,
     withResearch: args.withResearch,
+    withHooks: args.withHooks,
     hooks: writesHooks,
     localGitExclude,
     removedLocalGitExclude,
@@ -939,6 +938,7 @@ function main() {
       skills: ".agents/skills",
       agents: ".codex/agents",
       hooks: writesHooks ? ".codex/hooks.json" : "",
+      router: ".codex/that-git-life/router.md",
       scripts: ".codex/that-git-life/scripts",
       runSummary: ".codex/that-git-life/run-summary.json",
       guidance: guidance.wroteAgents ? "AGENTS.md" : "AGENTS.that-git-life.md",

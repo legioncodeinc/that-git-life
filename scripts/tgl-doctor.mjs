@@ -55,7 +55,7 @@ function main() {
 
   const manifestPath = join(args.root, ".codex", "that-git-life", "manifest.json");
   const manifest = readJson(manifestPath);
-  const hooksExpected = manifest.hooks !== false && manifest.installMode !== "ci-safe";
+  const hooksExpected = manifest.hooks === true;
   const hooksPath = join(args.root, ".codex", "hooks.json");
   const hookScript = join(args.root, ".codex", "hooks", "that-git-life-hook.mjs");
   const hookPolicy = join(args.root, ".codex", "that-git-life", "scripts", "tgl-hook-policy.mjs");
@@ -74,7 +74,7 @@ function main() {
       installMode: manifest.installMode || "missing",
       profile: manifest.profile || "missing",
     }),
-    check("generated router", existsSync(join(args.root, ".agents", "skills", "that-git-life", "SKILL.md"))),
+    check("generated router", existsSync(join(args.root, ".codex", "that-git-life", "router.md")) && !existsSync(join(args.root, ".agents", "skills", "that-git-life", "SKILL.md"))),
     check("runtime scripts", existsSync(join(args.root, ".codex", "that-git-life", "scripts", "tgl-doctor.mjs"))),
     check("run summary", existsSync(join(args.root, ".codex", "that-git-life", "run-summary.json"))),
     check("hooks", hooksExpected ? existsSync(hooksPath) && existsSync(hookScript) : !existsSync(hooksPath), {

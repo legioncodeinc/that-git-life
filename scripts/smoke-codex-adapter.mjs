@@ -9,7 +9,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 function usage() {
   console.log(`Usage:
-  node scripts/smoke-codex-adapter.mjs [--profile core|autopilot|all] [--agents-mode auto|fragment|merge|both] [--install-mode committed-project|local-only|ci-safe] [--with-research] [--keep]
+  node scripts/smoke-codex-adapter.mjs [--profile core|autopilot|all] [--agents-mode auto|fragment|merge|both] [--install-mode committed-project|local-only|ci-safe] [--with-research] [--with-hooks] [--keep]
 `);
 }
 
@@ -19,6 +19,7 @@ function parseArgs(argv) {
     agentsMode: "both",
     installMode: "committed-project",
     withResearch: false,
+    withHooks: false,
     keep: false,
   };
 
@@ -42,6 +43,10 @@ function parseArgs(argv) {
     }
     if (arg === "--with-research") {
       args.withResearch = true;
+      continue;
+    }
+    if (arg === "--with-hooks") {
+      args.withHooks = true;
       continue;
     }
     if (arg === "--keep") {
@@ -142,6 +147,7 @@ function main() {
       "--clean",
     ];
     if (args.withResearch) buildArgs.push("--with-research");
+    if (args.withHooks) buildArgs.push("--with-hooks");
 
     const build = runJson("node", buildArgs);
     const validation = runJson("node", [join(ROOT, "scripts", "validate-codex-adapter.mjs"), "--root", target]);
@@ -241,6 +247,7 @@ function main() {
           agentsMode: args.agentsMode,
           installMode: args.installMode,
           withResearch: args.withResearch,
+          withHooks: args.withHooks,
           build,
           validation,
           doctor: {

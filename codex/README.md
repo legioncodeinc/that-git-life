@@ -9,7 +9,7 @@ It translates the existing source assets into Codex-native surfaces:
 | `.cursor/skills/*/SKILL.md` Stingers | `.agents/skills/*` Codex skills |
 | `.cursor/agents/*.md` Bees | `.codex/agents/*.toml` Codex custom agents |
 | `.cursor/rules/*.mdc` always-on rules | `AGENTS.md` or `AGENTS.that-git-life.md` |
-| hook model | `.codex/hooks.json` plus `.codex/hooks/that-git-life-hook.mjs` |
+| hook model | optional ambient guardrails via `.codex/hooks.json` plus `.codex/hooks/that-git-life-hook.mjs` when `--with-hooks` is used |
 
 Codex skills are available in the CLI, app, and IDE extension. Custom agents are available when you explicitly ask Codex to spawn subagents. Hooks run when trusted through Codex's hook trust flow.
 
@@ -27,7 +27,7 @@ To install only the user-level launcher into a Codex home directory:
 node scripts/build-codex-adapter.mjs --out "$CODEX_HOME" --install-mode global-launcher
 ```
 
-That global launcher is intentionally small. It installs `skills/that-git-life/SKILL.md` plus a `skills/the-git-life/SKILL.md` alias, then bootstraps the project-local adapter into whichever repo you invoke it from. Set `THAT_GIT_LIFE_SOURCE` to the That Git Life source checkout, or pass `--source-root <path>` when creating a private local launcher. Omit `--source-root` for shareable launcher output.
+That global launcher is intentionally small. It installs a single user-facing `skills/that-git-life/SKILL.md`, then bootstraps the project-local adapter into whichever repo you invoke it from. Set `THAT_GIT_LIFE_SOURCE` to the That Git Life source checkout, or pass `--source-root <path>` when creating a private local launcher. Omit `--source-root` for shareable launcher output.
 
 Profiles:
 
@@ -42,6 +42,7 @@ Flags:
 - `--source-root <path>`: optional source checkout embedded only in `global-launcher` output. Prefer `THAT_GIT_LIFE_SOURCE` for shareable setups.
 - `--merge-agents`: backwards-compatible alias for `--agents-mode both` when `--agents-mode` is not provided.
 - `--with-research`: copies Stinger `research/` folders into the target project. By default the adapter skips research folders to keep generated installs compact.
+- `--with-hooks`: opts into project-local Codex hooks. Hooks are disabled by default so projects do not trigger Codex hook trust prompts just by installing That Git Life.
 - `--clean`: removes previously generated adapter skills, agents, hooks, and runtime logs before writing the new output.
 
 Install modes:
@@ -49,7 +50,7 @@ Install modes:
 - `committed-project`: default and backwards-compatible mode. Writes durable repo-local adapter files intended to be committed with the project.
 - `local-only`: writes the same local runtime scaffolding but adds project-local `.git/info/exclude` entries for `.agents/`, `.codex/`, and `AGENTS.that-git-life.md` so the install can stay uncommitted.
 - `ci-safe`: writes deterministic adapter assets suitable for project sharing and validation, but skips project-local hook registration under `.codex/hooks.json`.
-- `global-launcher`: writes only user-level launcher skills under `skills/that-git-life/` and `skills/the-git-life/`. It does not write project-local `.agents/`, `.codex/`, or `AGENTS.*` files.
+- `global-launcher`: writes only the user-level launcher skill under `skills/that-git-life/`. It does not write project-local `.agents/`, `.codex/`, or `AGENTS.*` files.
 
 Guidance modes:
 
@@ -65,26 +66,23 @@ Use `fragment` when you want to review instructions before touching an existing 
 The adapter writes:
 
 ```text
-.agents/skills/that-git-life/
 .agents/skills/beekeeper-suit/
 .agents/skills/*-stinger/
 .codex/agents/*-worker-bee.toml
-.codex/hooks.json
-.codex/hooks/that-git-life-hook.mjs
 .codex/that-git-life/manifest.json
+.codex/that-git-life/router.md
 .codex/that-git-life/run-summary.json
 .codex/that-git-life/scripts/*.mjs
 AGENTS.that-git-life.md
 ```
 
-`ci-safe` installs omit `.codex/hooks.json` and `.codex/hooks/that-git-life-hook.mjs`.
+Default installs omit `.codex/hooks.json` and `.codex/hooks/that-git-life-hook.mjs`. Hooks are not required to invoke `$that-git-life` or orchestrate the Codex skills, scripts, and agents. The global launcher and project router perform that orchestration. Use `--with-hooks` only when you explicitly want ambient project-local telemetry or policy warnings even outside a direct `$that-git-life` run, and are willing to trust those hooks in Codex.
 
 `global-launcher` installs instead write:
 
 ```text
 skills/that-git-life/SKILL.md
 skills/that-git-life/global-launcher.json
-skills/the-git-life/SKILL.md
 ```
 
 With `--agents-mode merge` or `--agents-mode both`, it writes or updates a managed block in `AGENTS.md`:
@@ -97,10 +95,10 @@ With `--agents-mode merge` or `--agents-mode both`, it writes or updates a manag
 
 ## Runtime behavior
 
-- The `that-git-life` router skill is installed at `.agents/skills/that-git-life/SKILL.md`. It can be invoked explicitly with `$that-git-life` or implicitly when project-local skill discovery sees it. If Codex resolves `that-git-life` to a user-level path instead, read the project-local router file explicitly.
+- The only user-facing launcher should be the global `$that-git-life` skill. Project installs write the internal router to `.codex/that-git-life/router.md` so autocomplete does not show duplicate `that-git-life` skills.
 - Domain Stingers remain normal Codex skills. Codex reads their `SKILL.md` only when selected.
 - Custom Bee agents do not auto-spawn. Ask Codex to spawn subagents when you want parallel or delegated worker-bee execution.
-- Hooks record SessionStart, UserPromptSubmit, and Stop events in `.codex/that-git-life/events.jsonl`, and run policy checks on SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, and Stop.
+- When installed with `--with-hooks`, hooks record SessionStart, UserPromptSubmit, and Stop events in `.codex/that-git-life/events.jsonl`, and run policy checks on SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, and Stop. They provide ambient reminders and audit traces, not the primary orchestration path.
 - Policy hooks warn by default and append to `.codex/that-git-life/policy-warnings.jsonl`. Set `TGL_HOOK_ENFORCEMENT=block` when you want hook warnings to fail the hook command.
 - The `autopilot` profile installs deterministic scripts for repo inspection, library bootstrap, PRD/IRD/ADR skeleton creation, backwards-PRD scaffolding, code-map generation, lifecycle moves, PR linking, execution-ledger generation, gate status checks, ship preflight, run-summary closeout, adapter doctor checks, and hook policy checks.
 - Generated adapter text files are normalized so downstream smoke branches can pass `git diff --check`.
@@ -150,7 +148,7 @@ codex exec -C "$tmp" --skip-git-repo-check "List the That Git Life Codex adapter
 cat "$tmp/.codex/that-git-life/events.jsonl"
 ```
 
-On the first run in a new project, Codex may ask you to trust the project-local hooks with `/hooks`.
+Default installs do not trigger Codex hook trust. If you install with `--with-hooks`, Codex may ask you to trust the project-local hooks with `/hooks`.
 
 ## Validation levels
 
@@ -170,8 +168,8 @@ This verifies:
 - all generated skills have `SKILL.md` with `name` and `description`
 - custom agents have `name`, `description`, and `developer_instructions`
 - stale `.cursor/skills` and `.claude/skills` paths are not present in generated Codex agent instructions
-- hooks, manifest, and guidance files exist
-- `ci-safe` installs intentionally omit hooks while other modes include them
+- manifest, router, and guidance files exist
+- default installs intentionally omit hooks; `--with-hooks` opt-in installs include hook files
 - runtime scripts exist under `.codex/that-git-life/scripts`
 - `.codex/that-git-life/run-summary.json` exists and has the closeout schema fields
 - generated adapter files do not contain NUL bytes
@@ -193,7 +191,7 @@ Focused adapter tests cover install modes, generated router wording, validation,
 node scripts/test-codex-adapter.mjs
 ```
 
-The focused test also validates `global-launcher`, including the `the-git-life` alias and the absence of embedded user-specific paths when `--source-root` is omitted.
+The focused test also validates `global-launcher`, including the single visible skill and the absence of embedded user-specific paths when `--source-root` is omitted.
 
 Run the generated doctor in a target project when you want a project-local health check:
 
@@ -211,7 +209,7 @@ codex exec -C "$tmp" --skip-git-repo-check --dangerously-bypass-hook-trust \
 cat "$tmp/.codex/that-git-life/events.jsonl"
 ```
 
-Use `--dangerously-bypass-hook-trust` only for disposable smoke automation. For daily use, trust hooks through `/hooks`.
+Use `--dangerously-bypass-hook-trust` only for disposable smoke automation. Daily installs should usually omit hooks; if you opt into hooks, trust them through `/hooks`.
 
 ### 4. Development E2E
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -30,7 +30,7 @@ function seedRepo(root) {
   });
 }
 
-function buildFixture(installMode) {
+function buildFixture(installMode, extraArgs = []) {
   const target = mkdtempSync(join(tmpdir(), `tgl-adapter-${installMode}-`));
   seedRepo(target);
   const build = runJson("node", [
@@ -44,6 +44,7 @@ function buildFixture(installMode) {
     "--install-mode",
     installMode,
     "--clean",
+    ...extraArgs,
   ]);
   return { target, build };
 }
@@ -62,7 +63,9 @@ function buildGlobalLauncherFixture() {
 }
 
 function assertRouterWording(target) {
-  const router = readFileSync(join(target, ".agents", "skills", "that-git-life", "SKILL.md"), "utf8");
+  assert.equal(existsSync(join(target, ".agents", "skills", "that-git-life", "SKILL.md")), false);
+  const router = readFileSync(join(target, ".codex", "that-git-life", "router.md"), "utf8");
+  assert.match(router, /intentionally not a Codex skill/);
   assert.match(router, /Prompt examples, route examples, and user-supplied path guesses are candidate inputs only/);
   assert.match(router, /discover the real repo inventory/);
   assert.match(router, /Plans, PRDs, IRDs, ADRs, code maps, and ledgers are working artifacts/);
@@ -110,18 +113,57 @@ function main() {
         assert.equal(manifest.localGitExclude, true);
         assert.equal(run("git", ["check-ignore", ".agents"], { cwd: target }), ".agents");
       }
-      if (mode === "ci-safe") {
-        assert.equal(manifest.hooks, false);
-        assert.equal(existsSync(join(target, ".codex", "hooks.json")), false);
-      } else {
-        assert.equal(manifest.hooks, true);
-        assert.equal(existsSync(join(target, ".codex", "hooks.json")), true);
-      }
+      assert.equal(manifest.hooks, false);
+      assert.equal(existsSync(join(target, ".codex", "hooks.json")), false);
+      assert.equal(existsSync(join(target, ".codex", "hooks", "that-git-life-hook.mjs")), false);
     }
 
     const transition = buildFixture("committed-project");
     retained.push(transition.target);
-    assert.equal(existsSync(join(transition.target, ".codex", "hooks.json")), true);
+    assert.equal(existsSync(join(transition.target, ".codex", "hooks.json")), false);
+    const hooksOptIn = buildFixture("committed-project", ["--with-hooks"]);
+    retained.push(hooksOptIn.target);
+    const hooksManifest = JSON.parse(readFileSync(join(hooksOptIn.target, ".codex", "that-git-life", "manifest.json"), "utf8"));
+    assert.equal(hooksManifest.hooks, true);
+    assert.equal(existsSync(join(hooksOptIn.target, ".codex", "hooks.json")), true);
+    assert.equal(existsSync(join(hooksOptIn.target, ".codex", "hooks", "that-git-life-hook.mjs")), true);
+
+    const staleHooks = buildFixture("committed-project", ["--with-hooks"]);
+    retained.push(staleHooks.target);
+    assert.equal(existsSync(join(staleHooks.target, ".codex", "hooks.json")), true);
+    runJson("node", [
+      join(ROOT, "scripts", "build-codex-adapter.mjs"),
+      "--out",
+      staleHooks.target,
+      "--profile",
+      "autopilot",
+      "--agents-mode",
+      "both",
+      "--install-mode",
+      "committed-project",
+    ]);
+    assert.equal(existsSync(join(staleHooks.target, ".codex", "hooks.json")), false);
+    assert.equal(existsSync(join(staleHooks.target, ".codex", "hooks", "that-git-life-hook.mjs")), false);
+
+    const staleProjectSkill = buildFixture("committed-project");
+    retained.push(staleProjectSkill.target);
+    const staleSkillRoot = join(staleProjectSkill.target, ".agents", "skills", "that-git-life");
+    mkdirSync(staleSkillRoot, { recursive: true });
+    writeFileSync(join(staleSkillRoot, "SKILL.md"), "---\nname: that-git-life\ndescription: stale\n---\n# Stale\n");
+    assert.equal(existsSync(join(staleSkillRoot, "SKILL.md")), true);
+    runJson("node", [
+      join(ROOT, "scripts", "build-codex-adapter.mjs"),
+      "--out",
+      staleProjectSkill.target,
+      "--profile",
+      "autopilot",
+      "--agents-mode",
+      "both",
+      "--install-mode",
+      "committed-project",
+    ]);
+    assert.equal(existsSync(join(staleSkillRoot, "SKILL.md")), false);
+
     runJson("node", [
       join(ROOT, "scripts", "build-codex-adapter.mjs"),
       "--out",
@@ -247,10 +289,9 @@ function main() {
     ]);
     assert.equal(globalValidation.ok, true);
     const canonical = readFileSync(join(globalLauncher.target, "skills", "that-git-life", "SKILL.md"), "utf8");
-    const alias = readFileSync(join(globalLauncher.target, "skills", "the-git-life", "SKILL.md"), "utf8");
     assert.match(canonical, /THAT_GIT_LIFE_SOURCE/);
-    assert.match(alias, /alias for `\$that-git-life`/);
-    assert.doesNotMatch(`${canonical}\n${alias}`, /\/Users\//);
+    assert.equal(existsSync(join(globalLauncher.target, "skills", "the-git-life", "SKILL.md")), false);
+    assert.doesNotMatch(canonical, /\/Users\//);
 
     console.log(JSON.stringify({ ok: true, fixtures: retained.length }, null, 2));
   } finally {

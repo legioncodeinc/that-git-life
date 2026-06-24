@@ -80,9 +80,6 @@ function validateSkills(root, errors) {
     if (!meta.description) fail(errors, `${skillDir}: missing skill description frontmatter`);
     count += 1;
   }
-  if (!existsSync(join(skillsRoot, "that-git-life", "SKILL.md"))) {
-    fail(errors, "missing that-git-life router skill");
-  }
   return count;
 }
 
@@ -114,11 +111,12 @@ function validateHooks(root, errors) {
   } catch {
     manifest = {};
   }
-  const hooksExpected = manifest.hooks !== false && manifest.installMode !== "ci-safe";
+  const hooksExpected = manifest.hooks === true;
   const hooksJson = join(root, ".codex", "hooks.json");
   const hookScript = join(root, ".codex", "hooks", "that-git-life-hook.mjs");
   if (!hooksExpected) {
-    if (existsSync(hooksJson)) fail(errors, "ci-safe install should not write .codex/hooks.json");
+    if (existsSync(hooksJson)) fail(errors, "install without hooks should not write .codex/hooks.json");
+    if (existsSync(hookScript)) fail(errors, "install without hooks should not write .codex/hooks/that-git-life-hook.mjs");
     return;
   }
   if (!existsSync(hooksJson)) fail(errors, "missing .codex/hooks.json");
@@ -138,6 +136,20 @@ function validateGuidance(root, errors) {
   const agentsHasManagedBlock = existsSync(agentsMd) && readFileSync(agentsMd, "utf8").includes("that-git-life-codex:start");
   if (!fragmentExists && !agentsHasManagedBlock) {
     fail(errors, "missing AGENTS.that-git-life.md or managed that-git-life block in AGENTS.md");
+  }
+}
+
+function validateRouter(root, errors) {
+  const router = join(root, ".codex", "that-git-life", "router.md");
+  if (!existsSync(router)) {
+    fail(errors, "missing .codex/that-git-life/router.md");
+    return;
+  }
+  const text = readFileSync(router, "utf8");
+  if (!text.includes("That Git Life Project Router")) fail(errors, "router.md missing project router heading");
+  if (!text.includes("intentionally not a Codex skill")) fail(errors, "router.md missing single visible skill guidance");
+  if (existsSync(join(root, ".agents", "skills", "that-git-life", "SKILL.md"))) {
+    fail(errors, "project install should not register a second .agents/skills/that-git-life skill");
   }
 }
 
@@ -218,28 +230,23 @@ function validateGlobalLauncher(root, errors) {
   const canonical = join(root, "skills", "that-git-life", "SKILL.md");
   const alias = join(root, "skills", "the-git-life", "SKILL.md");
   const manifestPath = join(root, "skills", "that-git-life", "global-launcher.json");
-  for (const path of [canonical, alias, manifestPath]) {
+  for (const path of [canonical, manifestPath]) {
     if (!existsSync(path)) fail(errors, `missing ${path}`);
   }
+  if (existsSync(alias)) fail(errors, "global launcher should expose only skills/that-git-life");
   if (existsSync(canonical)) {
     const text = readFileSync(canonical, "utf8");
     const meta = parseFrontmatter(text);
     if (meta.name !== "that-git-life") fail(errors, "global launcher canonical skill has wrong name");
     if (!text.includes("THAT_GIT_LIFE_SOURCE")) fail(errors, "global launcher missing THAT_GIT_LIFE_SOURCE guidance");
-    if (!text.includes(".agents/skills/that-git-life/SKILL.md")) fail(errors, "global launcher missing project-local router guidance");
-  }
-  if (existsSync(alias)) {
-    const text = readFileSync(alias, "utf8");
-    const meta = parseFrontmatter(text);
-    if (meta.name !== "the-git-life") fail(errors, "global launcher alias skill has wrong name");
-    if (!text.includes("alias for `$that-git-life`")) fail(errors, "global launcher alias missing alias guidance");
+    if (!text.includes(".codex/that-git-life/router.md")) fail(errors, "global launcher missing project-local router guidance");
   }
   if (existsSync(manifestPath)) {
     const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
     if (manifest.installMode !== "global-launcher") fail(errors, "global launcher manifest installMode is invalid");
     if (manifest.canonicalSkill !== "that-git-life") fail(errors, "global launcher manifest canonicalSkill is invalid");
-    if (!Array.isArray(manifest.aliases) || !manifest.aliases.includes("the-git-life")) {
-      fail(errors, "global launcher manifest missing the-git-life alias");
+    if (!Array.isArray(manifest.aliases) || manifest.aliases.length !== 0) {
+      fail(errors, "global launcher manifest should not register aliases");
     }
   }
 }
@@ -265,7 +272,7 @@ function main() {
   const errors = [];
   if (args.globalLauncher) {
     validateGlobalLauncher(args.root, errors);
-    const allGenerated = walkFiles(join(args.root, "skills", "that-git-life")).concat(walkFiles(join(args.root, "skills", "the-git-life")));
+    const allGenerated = walkFiles(join(args.root, "skills", "that-git-life"));
     for (const file of allGenerated) {
       const text = readFileSync(file, "utf8");
       if (/\0/.test(text)) fail(errors, `${file}: contains NUL byte`);
@@ -275,12 +282,13 @@ function main() {
       console.error(JSON.stringify({ ok: false, root: args.root, installMode: "global-launcher", errors }, null, 2));
       process.exit(1);
     }
-    console.log(JSON.stringify({ ok: true, root: args.root, installMode: "global-launcher", skills: 2, agents: 0 }, null, 2));
+    console.log(JSON.stringify({ ok: true, root: args.root, installMode: "global-launcher", skills: 1, agents: 0 }, null, 2));
     return;
   }
 
   const skills = validateSkills(args.root, errors);
   const agents = validateAgents(args.root, errors);
+  validateRouter(args.root, errors);
   validateHooks(args.root, errors);
   validateGuidance(args.root, errors);
   const manifest = validateManifest(args.root, errors);
