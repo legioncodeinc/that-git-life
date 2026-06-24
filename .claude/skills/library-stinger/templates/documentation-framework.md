@@ -10,26 +10,20 @@ The single source of truth for how documentation is written in this repository. 
 
 | Type | Purpose | Location | Primary audience |
 |---|---|---|---|
-| **Issue IRD** | Implementation plan for a specific GitHub issue | `library/requirements/issues/issue-<###>-<title>/ird-issue-<###>-<title>.md` | Implementation engineer |
-| **Feature PRD** | Planned feature spec (forward or retroactive) | `library/requirements/features/feature-<###>-<title>/prd-feature-<###>-<title>.md` (or `prd-feature-<###>-<title>-ck-<clickupId>.md` if from ClickUp) | Implementation engineer |
-| **QA Report (tied)** | Audit of an implementation against its plan | The plan's own `reports/<date>-qa-report.md` subfolder | Team lead, author of the feature |
-| **QA Report (standalone)** | Audit not tied to a single plan | `library/qa/<domain>/<date>-qa-report.md` | Team lead, audit reviewer |
-| **Architecture Doc** | System design, data flows, component relationships | `library/knowledge-base/architecture/` | Senior engineers, architects |
-| **API Reference** | Endpoint-by-endpoint documentation with schemas | `library/knowledge-base/api/` | Frontend devs, API consumers |
-| **How-to Guide** | Runbooks for setup, testing, deploying, adding features | `library/knowledge-base/how-to-guides/` | New engineers, DevOps |
-| **Integration Doc** | Third-party service configuration and error handling | `library/knowledge-base/integrations/` | DevOps, engineers wiring services |
-| **UX/UI Standard** | Visual design language - tokens, components, patterns | `library/knowledge-base/design/` | Designers, frontend devs |
-| **Feature Doc** | Completed feature reference (post-ship) | `library/knowledge-base/features/` | Any engineer joining the project |
-| **Spec** | Feature-level handoff spec for a UI flow | `library/knowledge-base/specs/` | Frontend engineers |
-| **Product Brief** | Product vision, scope, roadmap | `library/knowledge-base/product/` | Team, stakeholders |
-| **Standards Doc** | Rules for writing documentation itself | `library/knowledge-base/standards/` | All contributors |
-| **Release Notes** | What changed in each release | `library/knowledge-base/releases/` | All team members |
+| **Issue IRD** | Implementation plan for a specific GitHub issue | `library/issues/backlog/ird-<###>-<title>/ird-<###>-<title>-index.md` | Implementation engineer |
+| **Feature PRD** | Planned feature spec (forward or retroactive) | `library/requirements/backlog/prd-<###>-<title>/prd-<###>-<title>-index.md` | Implementation engineer |
+| **QA Report (tied)** | Audit of an implementation against its plan | The plan's own `qa/` subfolder | Team lead, author of the feature |
+| **QA Report (standalone)** | Audit not tied to a single plan | `library/requirements/reports/<date>-<type>-report.md` | Team lead, audit reviewer |
+| **Architecture Decision Record** | Durable architecture decision | `library/knowledge/private/architecture/ADR-<n>-<title>.md` | Senior engineers, architects |
+| **Private Knowledge Doc** | Internal architecture, API, integration, design, or runbook documentation | `library/knowledge/private/<domain>/<title>.md` | Engineering team |
+| **Public Knowledge Doc** | Customer-facing overview, guide, or FAQ | `library/knowledge/public/<overview|guides|faqs>/<title>.md` | Users, customers, support |
+| **Standards Doc** | Rules for writing documentation itself | `library/knowledge/private/standards/<title>.md` | All contributors |
 
 ---
 
 ## 2. Universal Document Header
 
-Every markdown file under `library/knowledge-base/` starts with:
+Every markdown file under `library/knowledge/` starts with:
 
 ```markdown
 # <Document Title>
@@ -59,17 +53,16 @@ Requirements-type docs (issue IRDs, feature PRDs, QA reports) use a different he
 
 | Document type | Folder + filename pattern | Example |
 |---|---|---|
-| Issue IRD | `issue-<###>-<title>/ird-issue-<###>-<title>.md` (with sibling `reports/`) | `issue-046-stale-cached-responses/ird-issue-046-stale-cached-responses.md` |
-| Feature PRD | `feature-<###>-<title>/prd-feature-<###>-<title>.md` (with sibling `reports/`) | `feature-007-user-profile-export/prd-feature-007-user-profile-export.md` |
-| Feature PRD (from ClickUp) | `feature-<###>-<title>/prd-feature-<###>-<title>-ck-<clickupId>.md` | `feature-007-user-profile-export/prd-feature-007-user-profile-export-ck-86c8wq2k1.md` |
-| QA report (tied to plan) | `<plan-folder>/reports/<date>-qa-report.md` | `feature-007-user-profile-export/reports/2026-04-26-qa-report.md` |
-| QA report (standalone) | `library/qa/<domain>/<date>-qa-report.md` | `library/qa/auth/2026-04-26-qa-report.md` |
-| Knowledge-base | `<domain>/<kebab-slug>.md` (no numeric prefix) | `architecture/authentication-flow.md` |
+| Issue IRD | `ird-<###>-<title>/ird-<###>-<title>-index.md` (with sibling `qa/`) | `ird-046-stale-cached-responses/ird-046-stale-cached-responses-index.md` |
+| Feature PRD | `prd-<###>-<title>/prd-<###>-<title>-index.md` (with sibling `qa/`) | `prd-007-user-profile-export/prd-007-user-profile-export-index.md` |
+| QA report (tied to plan) | `<plan-folder>/qa/<date>-qa-report.md` | `prd-007-user-profile-export/qa/2026-04-26-qa-report.md` |
+| QA report (standalone) | `library/requirements/reports/<date>-<type>-report.md` | `library/requirements/reports/2026-04-26-auth-qa-report.md` |
+| Knowledge doc | `<domain>/<kebab-slug>.md` (no numeric prefix) | `architecture/authentication-flow.md` |
 
 **Numbering rules:**
 - `<###>` is **3-digit zero-padded** (`006`, `046`, `093`, `100`). 4+ digit natural width.
 - Issue numbers follow the GitHub issue number.
-- Feature numbers are repo-local sequential; take `max + 1` from existing folders (open + `completed/`).
+- Feature numbers are repo-local sequential; take `max + 1` from existing folders (`backlog/`, `in-work/`, and `completed/`).
 - Titles are lowercase kebab-case, ≤60 chars.
 - The optional ClickUp suffix `-ck-<clickupId>` goes on the **main file only**, never on the folder name.
 
@@ -79,12 +72,14 @@ Requirements-type docs (issue IRDs, feature PRDs, QA reports) use a different he
 
 | Folder | Meaning |
 |---|---|
-| `library/requirements/features/feature-<###>-<title>/` | Feature work in progress. |
-| `library/requirements/features/completed/feature-<###>-<title>/` | Feature has shipped. Move the entire folder (PRD + `reports/`). |
-| `library/requirements/issues/issue-<###>-<title>/` | Issue work in progress (GitHub issue OPEN). |
-| `library/requirements/issues/completed/issue-<###>-<title>/` | Issue has been resolved (GitHub issue CLOSED). Move the entire folder (IRD + `reports/`). Symmetric to features. |
-| `<plan-folder>/reports/` | QA reports tied to that specific feature/issue. Travel with the folder when it moves. |
-| `library/qa/<domain>/` | Standalone QA reports - broad audits not tied to a single plan. |
+| `library/requirements/backlog/prd-<###>-<title>/` | Feature work planned but not started. |
+| `library/requirements/in-work/prd-<###>-<title>/` | Feature work currently being implemented. |
+| `library/requirements/completed/prd-<###>-<title>/` | Feature has shipped. Move the entire folder (PRD + `qa/`). |
+| `library/issues/backlog/ird-<###>-<title>/` | Issue work planned but not started. |
+| `library/issues/in-work/ird-<###>-<title>/` | Issue work currently being implemented. |
+| `library/issues/completed/ird-<###>-<title>/` | Issue has been resolved. Move the entire folder (IRD + `qa/`). |
+| `<plan-folder>/qa/` | QA reports tied to that specific feature/issue. Travel with the folder when it moves. |
+| `library/requirements/reports/` | Standalone reports and broad audits not tied to a single plan. |
 
 Move folders when status changes. Never edit lifecycle state in frontmatter alone.
 
@@ -107,7 +102,7 @@ Move folders when status changes. Never edit lifecycle state in frontmatter alon
 - Use relative paths: `[title](../relative/path.md)`.
 - Link to code with file paths (and line numbers where useful): `` `src/routes/users.ts:42-80` ``.
 - PRDs and IRDs link to their related issues, features, and QA reports in a **Related** section at the end.
-- Knowledge-base docs link to the PRDs that drove them (when applicable) and to source code.
+- Knowledge docs link to the PRDs that drove them (when applicable) and to source code.
 
 ---
 
@@ -133,7 +128,7 @@ Move folders when status changes. Never edit lifecycle state in frontmatter alon
 ## 9. Ownership
 
 - Requirements docs (issue IRDs, feature PRDs) are owned by the implementation author. QA reports are owned by `quality-worker-bee`.
-- Knowledge-base docs are owned by the team collectively - anyone may edit with a PR.
+- Knowledge docs are owned by the team collectively - anyone may edit with a PR.
 - Standards docs (this file included) require team consensus before changing.
 
 ---

@@ -1,6 +1,6 @@
 # Rules
 
-> What rules are, how they work, and how they map across Cursor, Claude Code, and Claude Cowork.
+> What rules are, how they work, and how they map across Cursor, Claude Code, Claude Cowork, and Codex.
 
 ## What a rule is
 
@@ -15,8 +15,9 @@ Think of rules as the constitution. Agents and skills do the work, but rules set
 | **Cursor** | `.cursor/rules/*.mdc` | Markdown with frontmatter: `description`, `alwaysApply`, and optional `globs` to scope a rule to certain files. |
 | **Claude Code** | `CLAUDE.md` (project) and `~/.claude/CLAUDE.md` (global) | Always-loaded project memory. Nested `CLAUDE.md` files can scope guidance to subtrees. |
 | **Claude Cowork** | `CLAUDE.md` plus project instructions | Cowork runs on the Claude Code engine, so the same `CLAUDE.md` mechanism applies, alongside any project-level instructions configured in the app. |
+| **Codex** | `AGENTS.md` plus optional nested `AGENTS.md` files | Always-loaded project guidance. The Codex adapter can generate a managed That Git Life block in `AGENTS.md`. |
 
-Cursor's `.mdc` rules and Claude Code's `CLAUDE.md` are different formats, so rules are translated, not copied, between them. This repo keeps the canonical rules as Cursor `.mdc` files and mirrors them into a root [`CLAUDE.md`](./CLAUDE.md) so the Claude Code and Cowork engines pick them up too.
+Cursor's `.mdc` rules, Claude Code's `CLAUDE.md`, and Codex's `AGENTS.md` are different formats, so rules are translated, not copied, between them. This repo keeps the canonical rules as Cursor `.mdc` files, mirrors them into a root [`CLAUDE.md`](./CLAUDE.md), and can generate Codex guidance through the [Codex adapter](./codex/README.md).
 
 ## The rules in this repo
 
