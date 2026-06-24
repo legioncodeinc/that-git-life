@@ -33,9 +33,9 @@
 
 ---
 
-That Git Life is a [Legion Code Inc.](https://www.legioncodeinc.com) project, and right now it is a blueprint, not a binary. There is no package to install yet. What lives in this repo today is two things: the plan for the product, and the AI tooling that will build it. The plan is a `library/` of PRDs and knowledge docs that spec exactly what gets built. The tooling is a cross-harness army of agents and skills (for Cursor, Claude Code, and Claude Cowork) that do the building.
+That Git Life is a [Legion Code Inc.](https://www.legioncodeinc.com) project, and right now it is a blueprint, not a binary. There is no package to install yet. What lives in this repo today is two things: the plan for the product, and the AI tooling that will build it. The plan is a `library/` of PRDs and knowledge docs that spec exactly what gets built. The tooling is a cross-harness army of agents and skills (for Cursor, Claude Code, Claude Cowork, and Codex) that do the building.
 
-The product these plans describe will be a globally-installed npm package: a single-command installer for Windows, macOS, and Linux, an always-on local service on `http://localhost:3050`, and a React web UI that standardizes new repos, scans existing ones for drift, manages your GitHub root, and syncs skills and agents for Cursor or Claude Code. That is the destination. This repo is how we get there.
+The product these plans describe will be a globally-installed npm package: a single-command installer for Windows, macOS, and Linux, an always-on local service on `http://localhost:3050`, and a React web UI that standardizes new repos, scans existing ones for drift, manages your GitHub root, and syncs skills and agents for Cursor, Claude Code, and Codex. That is the destination. This repo is how we get there.
 
 ---
 
@@ -49,6 +49,7 @@ This repo is the **planning and source of truth** for the product. Cursor (or an
 | [`.cursor/`](.cursor/) | Cursor agents, skills, and rules. The source of truth for the asset system. |
 | [`.claude/`](.claude/) | The same agents and skills, in the structure Claude Code consumes. |
 | [`.cowork/`](.cowork/) | Every skill packaged as an installable `.skill` for Claude Cowork. |
+| [`codex/`](codex/) | Codex adapter docs for generating `.agents/skills`, `.codex/agents`, internal router/runtime files, `AGENTS.md` guidance, and the `autopilot` profile for idea-to-merged-PR workflows. |
 | `AGENTS.md` · `SKILLS.md` · `HOOKS.md` · `RULES.md` | Deep explainers for each asset type and how they work across harnesses. |
 | `README.md` | This file. |
 | `LICENSE.md` | License. |
@@ -59,23 +60,23 @@ The work lives in `library/`. The agents read the PRDs there and build the produ
 
 ## The asset system
 
-This repo ships a full army of AI assets that work across Cursor, Claude Code, and Claude Cowork. There are four kinds. Each has a deep-dive doc.
+This repo ships a full army of AI assets that work across Cursor, Claude Code, Claude Cowork, and Codex. There are four kinds. Each has a deep-dive doc.
 
 ### Agents
 
-Focused AI personas, one per domain, with their own instructions and guardrails. A primary orchestrator routes each request to the specialist that owns it. In this repo they are called **Bees**, and each one is paired with a skill it reads from. They live in [`.cursor/agents/`](./.cursor/agents/) and [`.claude/agents/`](./.claude/agents/).
+Focused AI personas, one per domain, with their own instructions and guardrails. A primary orchestrator routes each request to the specialist that owns it. In this repo they are called **Bees**, and each one is paired with a skill it reads from. They live in [`.cursor/agents/`](./.cursor/agents/) and [`.claude/agents/`](./.claude/agents/), and the Codex adapter can generate `.codex/agents/*.toml` equivalents.
 
 **[Read more in AGENTS.md](./AGENTS.md)**
 
 ### Skills
 
-Packaged, reusable expertise an agent loads on demand: instructions, guides, templates, and examples behind a `SKILL.md`. In this repo they are called **Stingers**. They are the most portable asset, working in all three harnesses, and ship for Cowork as one-click `.skill` packages.
+Packaged, reusable expertise an agent loads on demand: instructions, guides, templates, and examples behind a `SKILL.md`. In this repo they are called **Stingers**. They are the most portable asset, working across the supported harnesses, shipping for Cowork as one-click `.skill` packages and for Codex as `.agents/skills` folders.
 
 **[Read more in SKILLS.md](./SKILLS.md)**
 
 ### Hooks
 
-Scripts that fire automatically on session events (before or after a tool runs, on prompt submit, on session start). They make "always do X" a guarantee instead of a hope. This repo currently ships none; the doc explains the model and how to add them per harness.
+Scripts that fire automatically on session events (before or after a tool runs, on prompt submit, on session start). They make "always do X" a guarantee instead of a hope. The Codex adapter supports an explicit `--with-hooks` opt-in for runtime verification and That Git Life policy warnings; default project installs avoid hooks so Codex does not prompt for hook trust.
 
 **[Read more in HOOKS.md](./HOOKS.md)**
 
@@ -89,14 +90,22 @@ Always-on guidance that constrains every agent at all times: house style, safety
 
 ## Cross-harness compatibility
 
-| Asset | Cursor | Claude Code | Claude Cowork |
-|---|---|---|---|
-| **Agents** | `.cursor/agents/*.md` | `.claude/agents/*.md` | runs on the Agent SDK; skills are the portable unit |
-| **Skills** | `.cursor/skills/<name>/` | `.claude/skills/<name>/` | `.cowork/skills/<name>.skill` (one-click install) |
-| **Hooks** | `.cursor/hooks.json` | `.claude/settings.json` | not user-configurable |
-| **Rules** | `.cursor/rules/*.mdc` | `CLAUDE.md` | `CLAUDE.md` + project instructions |
+| Asset | Cursor | Claude Code | Claude Cowork | Codex |
+|---|---|---|---|---|
+| **Agents** | `.cursor/agents/*.md` | `.claude/agents/*.md` | runs on the Agent SDK; skills are the portable unit | `.codex/agents/*.toml` generated by adapter |
+| **Skills** | `.cursor/skills/<name>/` | `.claude/skills/<name>/` | `.cowork/skills/<name>.skill` (one-click install) | `.agents/skills/<name>/` generated by adapter |
+| **Hooks** | `.cursor/hooks.json` | `.claude/settings.json` | not user-configurable | optional `.codex/hooks.json` with `--with-hooks` |
+| **Rules** | `.cursor/rules/*.mdc` | `CLAUDE.md` | `CLAUDE.md` + project instructions | `AGENTS.md` generated or merged by adapter |
 
-Skills port one-to-one across all three. Agents share a format across Cursor and Claude Code. Hooks and rules use different formats per harness, so they are translated rather than copied. The Cowork skill copies have their angle brackets swapped for curly braces so they survive import (see [SKILLS.md](./SKILLS.md)).
+Skills port cleanly across the supported harnesses. Agents share a Markdown format across Cursor and Claude Code; Codex uses TOML custom agents, so the adapter translates them. Hooks and rules use different formats per harness, so they are translated rather than copied. The Cowork skill copies have their angle brackets swapped for curly braces so they survive import (see [SKILLS.md](./SKILLS.md)).
+
+For Codex, the recommended product-building install is the `autopilot` profile:
+
+```bash
+node scripts/build-codex-adapter.mjs --out /path/to/project --profile autopilot --agents-mode both
+```
+
+That profile installs the PRD/IRD library workflow, backwards-PRD scaffolding for existing codebases, ADR writing, Thanos Gauntlet execution, security, quality, git, and implementation Stingers together so a developer can prompt Codex with: "Use That Git Life autopilot. Build <feature> and take it to merged PR." After a merged PR, the Codex adapter closes the loop by moving shipped governing artifacts to `completed/` and updating ledger/summary references.
 
 ---
 
@@ -297,7 +306,7 @@ Use this when code already exists but no PRD was ever written for it. You are do
 3. **It assigns the next PRD number.** Same rule as a forward PRD: list every `prd-*` folder across `backlog/`, `in-work/`, and `completed/`, take the max and add one.
 4. **It writes the index, marked retroactive.** The header status is "Shipped" with a "Retroactive: Yes" note. The body captures the real APIs, data models, and the key decisions that would otherwise be lost.
 5. **It cross-links.** Related knowledge docs, ADRs, and any issues the scan surfaced get linked in.
-6. **It files by lifecycle.** A backwards-PRD is created in `backlog/`. If the code is fully shipped and verified, the agent moves the whole folder straight to `completed/`.
+6. **It files by lifecycle.** A backwards-PRD is created in `backlog/` only when it captures unfinished or unverified follow-up work. If the code is already fully shipped and verified, the agent creates or moves the whole folder straight to `completed/`.
 
 Repeat module by module until your shipped code has a paper trail that matches reality.
 
