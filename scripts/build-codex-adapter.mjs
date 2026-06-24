@@ -489,6 +489,11 @@ writeFileSync(
 `,
   );
 
+  const eventHookCommand = (event) =>
+    `root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"; script="$root/.codex/hooks/that-git-life-hook.mjs"; [ -f "$script" ] || exit 0; node "$script" --event ${event}`;
+  const policyHookCommand = (event) =>
+    `root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"; script="$root/.codex/that-git-life/scripts/tgl-hook-policy.mjs"; [ -f "$script" ] || exit 0; node "$script" --root "$root" --event ${event}`;
+
   writeFileSync(
     join(targetRoot, ".codex", "hooks.json"),
     JSON.stringify(
@@ -500,15 +505,13 @@ writeFileSync(
               hooks: [
                 {
                   type: "command",
-                  command:
-                    'root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"; node "$root/.codex/hooks/that-git-life-hook.mjs" --event SessionStart',
+                  command: eventHookCommand("SessionStart"),
                   timeout: 10,
                   statusMessage: "That Git Life session context",
                 },
                 {
                   type: "command",
-                  command:
-                    'root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"; node "$root/.codex/that-git-life/scripts/tgl-hook-policy.mjs" --root "$root" --event SessionStart',
+                  command: policyHookCommand("SessionStart"),
                   timeout: 10,
                   statusMessage: "That Git Life policy check",
                 },
@@ -520,15 +523,13 @@ writeFileSync(
               hooks: [
                 {
                   type: "command",
-                  command:
-                    'root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"; node "$root/.codex/hooks/that-git-life-hook.mjs" --event UserPromptSubmit',
+                  command: eventHookCommand("UserPromptSubmit"),
                   timeout: 10,
                   statusMessage: "That Git Life prompt route",
                 },
                 {
                   type: "command",
-                  command:
-                    'root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"; node "$root/.codex/that-git-life/scripts/tgl-hook-policy.mjs" --root "$root" --event UserPromptSubmit',
+                  command: policyHookCommand("UserPromptSubmit"),
                   timeout: 10,
                   statusMessage: "That Git Life policy check",
                 },
@@ -540,8 +541,7 @@ writeFileSync(
               hooks: [
                 {
                   type: "command",
-                  command:
-                    'root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"; node "$root/.codex/that-git-life/scripts/tgl-hook-policy.mjs" --root "$root" --event PreToolUse',
+                  command: policyHookCommand("PreToolUse"),
                   timeout: 10,
                   statusMessage: "That Git Life pre-tool policy",
                 },
@@ -553,8 +553,7 @@ writeFileSync(
               hooks: [
                 {
                   type: "command",
-                  command:
-                    'root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"; node "$root/.codex/that-git-life/scripts/tgl-hook-policy.mjs" --root "$root" --event PostToolUse',
+                  command: policyHookCommand("PostToolUse"),
                   timeout: 10,
                   statusMessage: "That Git Life post-tool policy",
                 },
@@ -566,15 +565,13 @@ writeFileSync(
               hooks: [
                 {
                   type: "command",
-                  command:
-                    'root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"; node "$root/.codex/hooks/that-git-life-hook.mjs" --event Stop',
+                  command: eventHookCommand("Stop"),
                   timeout: 10,
                   statusMessage: "That Git Life closeout",
                 },
                 {
                   type: "command",
-                  command:
-                    'root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"; node "$root/.codex/that-git-life/scripts/tgl-hook-policy.mjs" --root "$root" --event Stop',
+                  command: policyHookCommand("Stop"),
                   timeout: 10,
                   statusMessage: "That Git Life closeout policy",
                 },
