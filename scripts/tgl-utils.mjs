@@ -15,6 +15,14 @@ export function parseArgs(argv, spec = {}) {
     const type = spec[key] || "value";
     if (type === "boolean") {
       args[key] = true;
+    } else if (type === "array") {
+      const value = argv[i + 1];
+      if (value == null || value.startsWith("--")) {
+        throw new Error(`Missing value for --${key}`);
+      }
+      if (!Array.isArray(args[key])) args[key] = [];
+      args[key].push(value);
+      i += 1;
     } else {
       const value = argv[i + 1];
       if (value == null || value.startsWith("--")) {

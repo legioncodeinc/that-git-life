@@ -77,15 +77,20 @@ const RUNTIME_SCRIPTS = [
   "tgl-link-pr.mjs",
   "tgl-ship-preflight.mjs",
   "tgl-hook-policy.mjs",
+  "tgl-run-summary.mjs",
+  "tgl-doctor.mjs",
 ];
+
+const INSTALL_MODES = ["committed-project", "local-only", "ci-safe"];
 
 function usage() {
   console.log(`Usage:
-  node scripts/build-codex-adapter.mjs --out <target-project> [--profile core|autopilot|all] [--agents-mode auto|fragment|merge|both] [--merge-agents] [--with-research] [--clean]
+  node scripts/build-codex-adapter.mjs --out <target-project> [--profile core|autopilot|all] [--agents-mode auto|fragment|merge|both] [--install-mode committed-project|local-only|ci-safe] [--merge-agents] [--with-research] [--clean]
 
 Examples:
   node scripts/build-codex-adapter.mjs --out /tmp/tgl-codex-smoke --profile core --agents-mode both --clean
   node scripts/build-codex-adapter.mjs --out /path/to/repo --profile autopilot --agents-mode both
+  node scripts/build-codex-adapter.mjs --out /path/to/repo --profile autopilot --install-mode local-only
   node scripts/build-codex-adapter.mjs --out /path/to/repo --profile all
 `);
 }
@@ -95,6 +100,7 @@ function parseArgs(argv) {
     out: "",
     profile: "core",
     agentsMode: "",
+    installMode: "committed-project",
     mergeAgents: false,
     withResearch: false,
     clean: false,
@@ -118,6 +124,10 @@ function parseArgs(argv) {
       args.agentsMode = argv[++i] ?? "";
       continue;
     }
+    if (arg === "--install-mode") {
+      args.installMode = argv[++i] ?? "";
+      continue;
+    }
     if (arg === "--merge-agents") {
       args.mergeAgents = true;
       continue;
@@ -135,6 +145,9 @@ function parseArgs(argv) {
 
   if (!args.out) throw new Error("Missing required --out <target-project>");
   if (!["core", "autopilot", "all"].includes(args.profile)) throw new Error("--profile must be core, autopilot, or all");
+  if (!INSTALL_MODES.includes(args.installMode)) {
+    throw new Error("--install-mode must be committed-project, local-only, or ci-safe");
+  }
   if (!args.agentsMode) args.agentsMode = args.mergeAgents ? "both" : "auto";
   if (!["auto", "fragment", "merge", "both"].includes(args.agentsMode)) {
     throw new Error("--agents-mode must be auto, fragment, merge, or both");
@@ -284,6 +297,8 @@ node .codex/that-git-life/scripts/tgl-bootstrap-library.mjs --root .
 
 Then classify the request.
 
+Prompt examples, route examples, and user-supplied path guesses are candidate inputs only. Before hardcoding a route, file, script, command, or product surface into a plan or implementation, discover the real repo inventory with shell search, project manifests, route trees, package scripts, framework config, and existing docs. If an example names a route or file that does not exist, repair the assumption from repo truth and record the correction in the governing artifact or ledger.
+
 ## Request classification
 
 - New product, module, or feature: create a PRD with \`tgl-new-prd.mjs\`, then fill it using \`library-stinger\`.
@@ -296,42 +311,53 @@ Then classify the request.
 
 ## Autopilot execution order
 
-1. Read \`../beekeeper-suit/SKILL.md\` when routing is needed.
-2. Bootstrap \`library/\` if missing.
-3. If \`tgl-inspect-project.mjs\` reports \`recommendations.backwardsPrdFirst: true\`, create a retroactive PRD with \`tgl-backwards-prd.mjs\` before planning new work. Then fill it by reading the current code through \`library-stinger/guides/05-backwards-prd.md\`.
-4. Create or locate the governing forward PRD, IRD, and ADRs for the requested change.
-5. For existing code or backwards PRDs, generate \`CODE_MAP.md\` with \`tgl-code-map.mjs\` and use it as the starting evidence map. The command prints a compact JSON summary by default; pass \`--include-summaries\` only when you need every file summary in stdout.
-6. Fill planning docs until acceptance criteria are binary and testable.
-7. When implementation begins, move the governing PRD or IRD to \`in-work\`:
+For non-trivial work, enforce this order. Plans, PRDs, IRDs, ADRs, code maps, and ledgers are working artifacts that enable implementation; they are stopping points only when the user explicitly requested planning-only.
+
+Required sequence: repo inspection -> library bootstrap -> backwards PRD when needed -> governing PRD/IRD/ADR -> move governing artifact to in-work -> EXECUTION_LEDGER.md -> branch -> implementation -> verification -> PR -> checks -> authorized merge.
+
+1. Inspect the repo with \`tgl-inspect-project.mjs\`, then confirm real routes, files, scripts, framework conventions, package commands, CI, and docs with direct repo searches.
+2. Read \`../beekeeper-suit/SKILL.md\` when routing is needed.
+3. Bootstrap \`library/\` if missing.
+4. If \`tgl-inspect-project.mjs\` reports \`recommendations.backwardsPrdFirst: true\`, create a retroactive PRD with \`tgl-backwards-prd.mjs\` before planning new work. Then fill it by reading the current code through \`library-stinger/guides/05-backwards-prd.md\`.
+5. Create or locate the governing forward PRD, IRD, and ADRs for the requested change.
+6. For existing code or backwards PRDs, generate \`CODE_MAP.md\` with \`tgl-code-map.mjs\` and use it as the starting evidence map. The command prints a compact JSON summary by default; pass \`--include-summaries\` only when you need every file summary in stdout.
+7. Fill planning docs until acceptance criteria are binary and testable.
+8. Move the governing PRD or IRD to \`in-work\` before implementation begins:
 
 \`\`\`bash
 node .codex/that-git-life/scripts/tgl-start-work.mjs --root . --artifact <path-to-prd-or-ird-folder>
 \`\`\`
 
-8. Generate \`EXECUTION_LEDGER.md\` from the governing doc:
+9. Generate \`EXECUTION_LEDGER.md\` from the governing doc:
 
 \`\`\`bash
 node .codex/that-git-life/scripts/tgl-ledger.mjs --root . --from <path-to-prd-or-ird>
 \`\`\`
 
-9. Create a feature branch or worktree before implementation unless the user explicitly asks for direct-main work.
-10. Execute the work with the relevant domain Stinger. For PRD execution, read \`../thanos-gauntlet-glove/SKILL.md\` and follow its phases, mapped to Codex custom agents when explicit delegation is useful.
-11. Keep the ledger current. Criteria move OPEN -> IN_PROGRESS -> DONE -> VERIFIED. Do not mark VERIFIED until tests or direct checks prove it.
-12. Run security before quality:
+10. Create a feature branch or worktree before implementation unless the user explicitly asks for direct-main work.
+11. Execute the work with the relevant domain Stinger. For PRD execution, read \`../thanos-gauntlet-glove/SKILL.md\` and follow its phases, mapped to Codex custom agents when explicit delegation is useful.
+12. Keep the ledger current. Criteria move OPEN -> IN_PROGRESS -> DONE -> VERIFIED. Do not mark VERIFIED until tests or direct checks prove it.
+13. Run security before quality:
    - read \`../security-stinger/SKILL.md\`
    - fix medium or higher findings
    - read \`../quality-stinger/SKILL.md\`
    - fix medium or higher findings
-13. Run gate and ship preflight:
+14. Run gate and ship preflight:
 
 \`\`\`bash
 node .codex/that-git-life/scripts/tgl-gate-status.mjs --root .
 node .codex/that-git-life/scripts/tgl-ship-preflight.mjs --root .
 \`\`\`
 
-14. Commit scoped changes, push the branch, open a PR, watch checks, fix failures, and merge when green if the user authorized merge-through.
-15. Link the PR back to the governing artifact with \`tgl-link-pr.mjs\`.
-16. Move completed PRD or IRD folders from \`in-work\` to \`completed\` with \`tgl-complete-work.mjs\` when the PR is merged.
+15. Commit scoped changes, push the branch, open a PR, watch checks, fix failures, and merge when green if the user authorized merge-through.
+16. Link the PR back to the governing artifact with \`tgl-link-pr.mjs\`.
+17. Write or update the closeout summary:
+
+\`\`\`bash
+node .codex/that-git-life/scripts/tgl-run-summary.mjs --root . --governing-artifact <path> --ledger EXECUTION_LEDGER.md
+\`\`\`
+
+18. Move completed PRD or IRD folders from \`in-work\` to \`completed\` with \`tgl-complete-work.mjs\` when the PR is merged.
 
 ## Codex surface rules
 
@@ -488,6 +514,7 @@ writeFileSync(
 );
 `,
   );
+  chmodSync(join(hookDir, "that-git-life-hook.mjs"), 0o755);
 
   const eventHookCommand = (event) =>
     `root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"; script="$root/.codex/hooks/that-git-life-hook.mjs"; [ -f "$script" ] || exit 0; node "$script" --event ${event}`;
@@ -598,6 +625,63 @@ function writeRuntimeScripts(targetRoot) {
   }
 }
 
+function writeRunSummaryTemplate(targetRoot) {
+  const summaryPath = join(targetRoot, ".codex", "that-git-life", "run-summary.json");
+  ensureDir(dirname(summaryPath));
+  writeFileSync(
+    summaryPath,
+    JSON.stringify(
+      {
+        schema: "that-git-life.run-summary.v1",
+        generatedAt: new Date().toISOString(),
+        branch: "",
+        commit: "",
+        prUrl: "",
+        mergeStatus: "unknown",
+        governingArtifactPath: "",
+        ledgerPath: "",
+        commandsRun: [],
+        verificationOutputs: [],
+        reportPaths: [],
+        failureCounts: {
+          total: 0,
+          tests: 0,
+          checks: 0,
+          security: 0,
+          quality: 0,
+        },
+        successfulProofCounts: {
+          total: 0,
+          tests: 0,
+          checks: 0,
+          security: 0,
+          quality: 0,
+        },
+        knownLimits: [],
+      },
+      null,
+      2,
+    ) + "\n",
+  );
+}
+
+function appendLocalOnlyGitExclude(targetRoot) {
+  const gitDir = join(targetRoot, ".git");
+  if (!existsSync(gitDir)) return false;
+  const excludePath = join(gitDir, "info", "exclude");
+  ensureDir(dirname(excludePath));
+  const block = [
+    "# That Git Life local-only Codex adapter",
+    ".agents/",
+    ".codex/",
+    "AGENTS.that-git-life.md",
+  ].join("\n");
+  const existing = existsSync(excludePath) ? readFileSync(excludePath, "utf8") : "";
+  if (existing.includes("# That Git Life local-only Codex adapter")) return true;
+  writeFileSync(excludePath, `${existing.trimEnd()}\n${block}\n`);
+  return true;
+}
+
 function sourceCommit() {
   try {
     return execFileSync("git", ["rev-parse", "HEAD"], { cwd: ROOT, encoding: "utf8" }).trim();
@@ -612,7 +696,7 @@ function main() {
   ensureDir(targetRoot);
 
   if (args.clean) {
-    for (const rel of [".agents/skills", ".codex/agents", ".codex/hooks", ".codex/that-git-life"]) {
+    for (const rel of [".agents/skills", ".codex/agents", ".codex/hooks", ".codex/hooks.json", ".codex/that-git-life"]) {
       const path = join(targetRoot, rel);
       if (existsSync(path)) rmSync(path, { recursive: true, force: true });
     }
@@ -649,16 +733,22 @@ function main() {
     copiedAgents.push(meta.name);
   }
 
-  writeHooks(targetRoot);
+  const writesHooks = args.installMode !== "ci-safe";
+  if (writesHooks) writeHooks(targetRoot);
   writeRuntimeScripts(targetRoot);
+  writeRunSummaryTemplate(targetRoot);
   const guidance = writeAgentsGuidance(targetRoot, args.agentsMode);
+  const localGitExclude = args.installMode === "local-only" ? appendLocalOnlyGitExclude(targetRoot) : false;
 
   const manifest = {
     adapter: "that-git-life-codex",
     profile: args.profile,
+    installMode: args.installMode,
     agentsMode: guidance.mode,
     requestedAgentsMode: guidance.requestedMode,
     withResearch: args.withResearch,
+    hooks: writesHooks,
+    localGitExclude,
     sourceCommit: sourceCommit(),
     generatedAt: new Date().toISOString(),
     skills: copiedSkills.length,
@@ -667,8 +757,9 @@ function main() {
     targetRelativePaths: {
       skills: ".agents/skills",
       agents: ".codex/agents",
-      hooks: ".codex/hooks.json",
+      hooks: writesHooks ? ".codex/hooks.json" : "",
       scripts: ".codex/that-git-life/scripts",
+      runSummary: ".codex/that-git-life/run-summary.json",
       guidance: guidance.wroteAgents ? "AGENTS.md" : "AGENTS.that-git-life.md",
       guidanceFragment: guidance.wroteFragment ? "AGENTS.that-git-life.md" : "",
     },
@@ -682,6 +773,7 @@ function main() {
         ok: true,
         out: targetRoot,
         profile: args.profile,
+        installMode: args.installMode,
         skills: copiedSkills.length,
         agents: copiedAgents.length,
         agentsMode: guidance.mode,

@@ -30,9 +30,16 @@ Profiles:
 Flags:
 
 - `--agents-mode auto|fragment|merge|both`: controls how Codex guidance is written.
+- `--install-mode committed-project|local-only|ci-safe`: controls whether generated adapter assets are intended to be committed, kept local, or shared in CI-safe form.
 - `--merge-agents`: backwards-compatible alias for `--agents-mode both` when `--agents-mode` is not provided.
 - `--with-research`: copies Stinger `research/` folders into the target project. By default the adapter skips research folders to keep generated installs compact.
 - `--clean`: removes previously generated adapter skills, agents, hooks, and runtime logs before writing the new output.
+
+Install modes:
+
+- `committed-project`: default and backwards-compatible mode. Writes durable repo-local adapter files intended to be committed with the project.
+- `local-only`: writes the same local runtime scaffolding but adds project-local `.git/info/exclude` entries for `.agents/`, `.codex/`, and `AGENTS.that-git-life.md` so the install can stay uncommitted.
+- `ci-safe`: writes deterministic adapter assets suitable for project sharing and validation, but skips project-local hook registration under `.codex/hooks.json`.
 
 Guidance modes:
 
@@ -55,9 +62,12 @@ The adapter writes:
 .codex/hooks.json
 .codex/hooks/that-git-life-hook.mjs
 .codex/that-git-life/manifest.json
+.codex/that-git-life/run-summary.json
 .codex/that-git-life/scripts/*.mjs
 AGENTS.that-git-life.md
 ```
+
+`ci-safe` installs omit `.codex/hooks.json` and `.codex/hooks/that-git-life-hook.mjs`.
 
 With `--agents-mode merge` or `--agents-mode both`, it writes or updates a managed block in `AGENTS.md`:
 
@@ -74,7 +84,7 @@ With `--agents-mode merge` or `--agents-mode both`, it writes or updates a manag
 - Custom Bee agents do not auto-spawn. Ask Codex to spawn subagents when you want parallel or delegated worker-bee execution.
 - Hooks record SessionStart, UserPromptSubmit, and Stop events in `.codex/that-git-life/events.jsonl`, and run policy checks on SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, and Stop.
 - Policy hooks warn by default and append to `.codex/that-git-life/policy-warnings.jsonl`. Set `TGL_HOOK_ENFORCEMENT=block` when you want hook warnings to fail the hook command.
-- The `autopilot` profile installs deterministic scripts for repo inspection, library bootstrap, PRD/IRD/ADR skeleton creation, backwards-PRD scaffolding, code-map generation, lifecycle moves, PR linking, execution-ledger generation, gate status checks, ship preflight, and hook policy checks.
+- The `autopilot` profile installs deterministic scripts for repo inspection, library bootstrap, PRD/IRD/ADR skeleton creation, backwards-PRD scaffolding, code-map generation, lifecycle moves, PR linking, execution-ledger generation, gate status checks, ship preflight, run-summary closeout, adapter doctor checks, and hook policy checks.
 - Generated adapter text files are normalized so downstream smoke branches can pass `git diff --check`.
 
 ## Autopilot flow
@@ -88,19 +98,25 @@ Use That Git Life autopilot. Build <feature or fix> and take it to merged PR.
 The generated `that-git-life` skill then drives this state machine:
 
 1. Inspect the repo with `tgl-inspect-project.mjs`.
-2. Bootstrap `library/` with `tgl-bootstrap-library.mjs` if missing.
-3. If existing code is present and no PRDs exist, create a retroactive PRD with `tgl-backwards-prd.mjs` before planning new work.
-4. Classify the request as feature/product work, bug/incident work, architecture decision, existing PRD/IRD execution, or tiny edit.
-5. Create missing PRD, IRD, or ADR skeletons with `tgl-new-prd.mjs`, `tgl-new-ird.mjs`, or `tgl-new-adr.mjs`.
-6. Fill the planning docs with `library-stinger` or `adr-writing-stinger` until acceptance criteria are binary and testable.
-7. Move the governing PRD or IRD into `in-work` with `tgl-start-work.mjs`.
-8. Generate `CODE_MAP.md` for existing code paths with `tgl-code-map.mjs`. The command prints compact JSON by default; pass `--include-summaries` only when full per-file JSON is useful.
-9. Generate `EXECUTION_LEDGER.md` with `tgl-ledger.mjs`.
-10. Create a branch/worktree and execute the work, using `thanos-gauntlet-glove` for PRD execution.
-11. Run security before quality.
-12. Check gates with `tgl-gate-status.mjs` and ship readiness with `tgl-ship-preflight.mjs`.
-13. Commit, push, open a PR, watch CI, fix failures, and merge when authorized.
-14. Link the merged PR to the governing artifact with `tgl-link-pr.mjs`, then move the artifact to `completed` with `tgl-complete-work.mjs`.
+2. Discover real repo routes, files, scripts, package commands, CI, and docs before turning examples into plans.
+3. Bootstrap `library/` with `tgl-bootstrap-library.mjs` if missing.
+4. If existing code is present and no PRDs exist, create a retroactive PRD with `tgl-backwards-prd.mjs` before planning new work.
+5. Classify the request as feature/product work, bug/incident work, architecture decision, existing PRD/IRD execution, or tiny edit.
+6. Create missing PRD, IRD, or ADR skeletons with `tgl-new-prd.mjs`, `tgl-new-ird.mjs`, or `tgl-new-adr.mjs`.
+7. Fill the planning docs with `library-stinger` or `adr-writing-stinger` until acceptance criteria are binary and testable.
+8. Move the governing PRD or IRD into `in-work` with `tgl-start-work.mjs`.
+9. Generate `CODE_MAP.md` for existing code paths with `tgl-code-map.mjs`. The command prints compact JSON by default; pass `--include-summaries` only when full per-file JSON is useful.
+10. Generate `EXECUTION_LEDGER.md` with `tgl-ledger.mjs`.
+11. Create a branch/worktree and execute the work, using `thanos-gauntlet-glove` for PRD execution.
+12. Run security before quality.
+13. Check gates with `tgl-gate-status.mjs` and ship readiness with `tgl-ship-preflight.mjs`.
+14. Commit, push, open a PR, watch CI, fix failures, and merge when authorized.
+15. Link the merged PR to the governing artifact with `tgl-link-pr.mjs`.
+16. Write `.codex/that-git-life/run-summary.json` with `tgl-run-summary.mjs`, then move the artifact to `completed` with `tgl-complete-work.mjs`.
+
+PRDs, IRDs, ADRs, code maps, and ledgers are working artifacts. They are stopping points only when the user explicitly requested planning-only.
+
+Route examples and prompt examples are candidate inputs, not assumed repo truth. The generated router instructs Codex to inventory the actual repo and repair nonexistent route or file assumptions before implementation.
 
 Bug work without a GitHub issue number is treated as a tightly scoped PRD by default. Use an IRD only when a GitHub issue number exists or Codex creates one first. Existing repos that were built before That Git Life should get backwards PRDs first so future changes preserve already-shipped behavior.
 
@@ -136,7 +152,9 @@ This verifies:
 - custom agents have `name`, `description`, and `developer_instructions`
 - stale `.cursor/skills` and `.claude/skills` paths are not present in generated Codex agent instructions
 - hooks, manifest, and guidance files exist
+- `ci-safe` installs intentionally omit hooks while other modes include them
 - runtime scripts exist under `.codex/that-git-life/scripts`
+- `.codex/that-git-life/run-summary.json` exists and has the closeout schema fields
 - generated adapter files do not contain NUL bytes
 - generated adapter files do not contain trailing whitespace or raw conflict-marker lines
 
@@ -149,6 +167,18 @@ node scripts/smoke-codex-adapter.mjs --profile autopilot
 ```
 
 Use `--keep` if you want to inspect the temporary smoke repo after the run.
+
+Focused adapter tests cover install modes, generated router wording, validation, doctor behavior, and run-summary output:
+
+```bash
+node scripts/test-codex-adapter.mjs
+```
+
+Run the generated doctor in a target project when you want a project-local health check:
+
+```bash
+node .codex/that-git-life/scripts/tgl-doctor.mjs --root .
+```
 
 ### 3. Codex hook smoke
 
@@ -231,7 +261,7 @@ What this proves:
 What this does not prove yet:
 
 - It does not prove every Stinger semantically succeeds on every repository type. The `all` profile is structurally validated, but only representative core Stingers have been exercised in development E2E.
-- It does not force branch-first execution by default. Policy hooks warn by default; set `TGL_HOOK_ENFORCEMENT=block` if you want hook warnings to fail the command.
+- It does not make policy hooks block by default. The generated router requires branch or worktree creation before non-trivial implementation; hooks still warn unless `TGL_HOOK_ENFORCEMENT=block` is set.
 - It does not make custom Bees auto-spawn. Codex custom agents are explicit delegation tools.
 - It does not write fully polished PRD/IRD/ADR content by script alone. Scripts create correct structure and skeletons; Codex fills the content using the matching Stinger.
 

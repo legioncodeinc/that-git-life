@@ -9,7 +9,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 function usage() {
   console.log(`Usage:
-  node scripts/smoke-codex-adapter.mjs [--profile core|autopilot|all] [--agents-mode auto|fragment|merge|both] [--with-research] [--keep]
+  node scripts/smoke-codex-adapter.mjs [--profile core|autopilot|all] [--agents-mode auto|fragment|merge|both] [--install-mode committed-project|local-only|ci-safe] [--with-research] [--keep]
 `);
 }
 
@@ -17,6 +17,7 @@ function parseArgs(argv) {
   const args = {
     profile: "autopilot",
     agentsMode: "both",
+    installMode: "committed-project",
     withResearch: false,
     keep: false,
   };
@@ -35,6 +36,10 @@ function parseArgs(argv) {
       args.agentsMode = argv[++i] ?? "";
       continue;
     }
+    if (arg === "--install-mode") {
+      args.installMode = argv[++i] ?? "";
+      continue;
+    }
     if (arg === "--with-research") {
       args.withResearch = true;
       continue;
@@ -49,6 +54,9 @@ function parseArgs(argv) {
   if (!["core", "autopilot", "all"].includes(args.profile)) throw new Error("--profile must be core, autopilot, or all");
   if (!["auto", "fragment", "merge", "both"].includes(args.agentsMode)) {
     throw new Error("--agents-mode must be auto, fragment, merge, or both");
+  }
+  if (!["committed-project", "local-only", "ci-safe"].includes(args.installMode)) {
+    throw new Error("--install-mode must be committed-project, local-only, or ci-safe");
   }
   return args;
 }
@@ -129,6 +137,8 @@ function main() {
       args.profile,
       "--agents-mode",
       args.agentsMode,
+      "--install-mode",
+      args.installMode,
       "--clean",
     ];
     if (args.withResearch) buildArgs.push("--with-research");
@@ -137,6 +147,7 @@ function main() {
     const validation = runJson("node", [join(ROOT, "scripts", "validate-codex-adapter.mjs"), "--root", target]);
     const inspect = runJson("node", [join(target, ".codex", "that-git-life", "scripts", "tgl-inspect-project.mjs"), "--root", target]);
     const bootstrap = runJson("node", [join(target, ".codex", "that-git-life", "scripts", "tgl-bootstrap-library.mjs"), "--root", target]);
+    const doctor = runJson("node", [join(target, ".codex", "that-git-life", "scripts", "tgl-doctor.mjs"), "--root", target]);
     const backwardsPrd = runJson("node", [
       join(target, ".codex", "that-git-life", "scripts", "tgl-backwards-prd.mjs"),
       "--root",
@@ -188,6 +199,23 @@ function main() {
     ]);
     const gate = runJson("node", [join(target, ".codex", "that-git-life", "scripts", "tgl-gate-status.mjs"), "--root", target]);
     const tests = run("npm", ["test"], { cwd: target });
+    const runSummary = runJson("node", [
+      join(target, ".codex", "that-git-life", "scripts", "tgl-run-summary.mjs"),
+      "--root",
+      target,
+      "--governing-artifact",
+      start.to,
+      "--ledger",
+      ledger.ledger,
+      "--command",
+      "npm test",
+      "--verification",
+      "node --test passed",
+      "--successful-proof-count",
+      "1",
+      "--known-limit",
+      "Disposable smoke repo has no remote PR.",
+    ]);
 
     run("git", ["add", "."], { cwd: target });
     const diffCheck = run("git", ["diff", "--cached", "--check"], { cwd: target });
@@ -201,9 +229,14 @@ function main() {
           retained: args.keep,
           profile: args.profile,
           agentsMode: args.agentsMode,
+          installMode: args.installMode,
           withResearch: args.withResearch,
           build,
           validation,
+          doctor: {
+            ok: doctor.ok,
+            blockers: doctor.blockers?.length || 0,
+          },
           inspect: {
             codeFiles: inspect.codeFiles,
             backwardsPrdFirst: inspect.recommendations?.backwardsPrdFirst,
@@ -229,6 +262,11 @@ function main() {
             ok: gate.ok,
             warnings: gate.warnings?.length || 0,
             blockers: gate.blockers?.length || 0,
+          },
+          runSummary: {
+            path: runSummary.path,
+            commands: runSummary.summary?.commandsRun?.length || 0,
+            proofs: runSummary.summary?.successfulProofCounts?.total || 0,
           },
           tests: tests.split("\n").slice(-2),
           diffCheck: diffCheck || "clean",

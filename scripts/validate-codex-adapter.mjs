@@ -104,8 +104,19 @@ function validateAgents(root, errors) {
 }
 
 function validateHooks(root, errors) {
+  let manifest = {};
+  try {
+    manifest = JSON.parse(readFileSync(join(root, ".codex", "that-git-life", "manifest.json"), "utf8"));
+  } catch {
+    manifest = {};
+  }
+  const hooksExpected = manifest.hooks !== false && manifest.installMode !== "ci-safe";
   const hooksJson = join(root, ".codex", "hooks.json");
   const hookScript = join(root, ".codex", "hooks", "that-git-life-hook.mjs");
+  if (!hooksExpected) {
+    if (existsSync(hooksJson)) fail(errors, "ci-safe install should not write .codex/hooks.json");
+    return;
+  }
   if (!existsSync(hooksJson)) fail(errors, "missing .codex/hooks.json");
   if (!existsSync(hookScript)) fail(errors, "missing .codex/hooks/that-git-life-hook.mjs");
   if (existsSync(hooksJson)) {
@@ -133,8 +144,11 @@ function validateManifest(root, errors) {
     return {};
   }
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
-  for (const key of ["adapter", "profile", "sourceCommit", "generatedAt", "skills", "agents"]) {
+  for (const key of ["adapter", "profile", "installMode", "sourceCommit", "generatedAt", "skills", "agents"]) {
     if (manifest[key] === undefined) fail(errors, `manifest missing ${key}`);
+  }
+  if (!["committed-project", "local-only", "ci-safe"].includes(manifest.installMode)) {
+    fail(errors, `manifest installMode is invalid: ${manifest.installMode}`);
   }
   return manifest;
 }
@@ -157,6 +171,8 @@ function validateRuntimeScripts(root, errors) {
     "tgl-link-pr.mjs",
     "tgl-ship-preflight.mjs",
     "tgl-hook-policy.mjs",
+    "tgl-run-summary.mjs",
+    "tgl-doctor.mjs",
   ];
   if (!existsSync(scriptsRoot)) {
     fail(errors, "missing .codex/that-git-life/scripts");
@@ -166,6 +182,31 @@ function validateRuntimeScripts(root, errors) {
     if (!existsSync(join(scriptsRoot, script))) {
       fail(errors, `missing runtime script ${script}`);
     }
+  }
+}
+
+function validateRunSummary(root, errors) {
+  const summaryPath = join(root, ".codex", "that-git-life", "run-summary.json");
+  if (!existsSync(summaryPath)) {
+    fail(errors, "missing .codex/that-git-life/run-summary.json");
+    return;
+  }
+  const summary = JSON.parse(readFileSync(summaryPath, "utf8"));
+  for (const key of [
+    "branch",
+    "commit",
+    "prUrl",
+    "mergeStatus",
+    "governingArtifactPath",
+    "ledgerPath",
+    "commandsRun",
+    "verificationOutputs",
+    "reportPaths",
+    "failureCounts",
+    "successfulProofCounts",
+    "knownLimits",
+  ]) {
+    if (summary[key] === undefined) fail(errors, `run-summary missing ${key}`);
   }
 }
 
@@ -194,6 +235,7 @@ function main() {
   validateGuidance(args.root, errors);
   const manifest = validateManifest(args.root, errors);
   validateRuntimeScripts(args.root, errors);
+  validateRunSummary(args.root, errors);
 
   const allGenerated = walkFiles(join(args.root, ".agents"))
     .concat(walkFiles(join(args.root, ".codex")))
